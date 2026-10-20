@@ -118,6 +118,62 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "tree",
+     "title": "An organisation of accounts with guardrails at the root",
+     "root": {
+      "label": "Organisation root",
+      "text": "guardrails: no disabling logs, no public storage",
+      "children": [
+       {
+        "label": "Security accounts",
+        "children": [
+         {
+          "label": "Log archive",
+          "text": "write-once audit logs"
+         },
+         {
+          "label": "Security tooling",
+          "text": "SIEM, posture, IR access"
+         }
+        ]
+       },
+       {
+        "label": "Production accounts",
+        "children": [
+         {
+          "label": "Payments prod",
+          "text": "strictest policies"
+         },
+         {
+          "label": "Clinic app prod"
+         }
+        ]
+       },
+       {
+        "label": "Non-production",
+        "children": [
+         {
+          "label": "Development"
+         },
+         {
+          "label": "Test"
+         }
+        ]
+       },
+       {
+        "label": "Sandbox",
+        "children": [
+         {
+          "label": "Experiments",
+          "text": "budget caps, auto-clean-up"
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "Separate accounts limit the blast radius of one stolen credential, and guardrails set at the root apply to every account below it, whatever permissions a local administrator holds."
+    },
+    {
      "type": "cli",
      "title": "A least-privilege policy for one storage location",
      "device": "Cloud IAM policy (JSON)",
@@ -158,6 +214,57 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "sequence",
+     "title": "Workload identity federation for a CI pipeline",
+     "actors": [
+      "CI job",
+      "CI token issuer",
+      "Cloud token service",
+      "Cloud API"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Request identity token"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Signed token: repo, branch, job",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 2,
+       "label": "Exchange token for deploy role"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Trust policy: this repo, main?"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "Role credentials, valid 1 hour",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 3,
+       "label": "Deploy using role credentials"
+      },
+      {
+       "from": 3,
+       "to": 0,
+       "label": "Result; call logged with role",
+       "reply": true
+      }
+     ],
+     "caption": "No secret is stored in the pipeline: the cloud trusts a signed statement about which repository and branch is running, and issues credentials that expire within the hour."
+    },
+    {
      "type": "scenario",
      "title": "Keys in a mobile app",
      "situation": "A start-up building a health app for clinics in Sylhet embedded a cloud access key with full storage permissions in its mobile app so the app could upload photos. A researcher reports it. What is the best fix?",
@@ -188,7 +295,7 @@ TRACK.modules.push({
      "type": "checklist",
      "title": "Cloud identity baseline",
      "items": [
-      "Root / tenant owner protected with hardware-backed MFA and unused day to day",
+      "Root / tenant owner protected with phishing-resistant, hardware-backed MFA (major providers now require MFA for these accounts) and unused day to day",
       "All human access federated through the corporate IdP",
       "No static access keys older than 90 days; aim for none",
       "Workloads use roles or workload identity",
@@ -205,7 +312,7 @@ TRACK.modules.push({
       "Prefer federated humans and short-lived workload credentials over static keys.",
       "Use organisation guardrails for rules that must never be broken."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -319,7 +426,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "Cloud environments change hundreds of times a day through consoles, scripts and pipelines. **Cloud security posture management (CSPM)** continuously compares configuration against policy, flags risky settings and often fixes them automatically. Combined with good logging, it turns cloud's speed from a risk into an advantage."
+     "text": "Cloud environments change hundreds of times a day through consoles, scripts and pipelines. **Cloud security posture management (CSPM)** continuously compares configuration against policy, flags risky settings and often fixes them automatically. Many teams now buy it inside a broader cloud-native application protection platform (CNAPP) that adds workload, identity and data-store (DSPM) views. Combined with good logging, it turns cloud's speed from a risk into an advantage."
     },
     {
      "type": "table",
@@ -400,6 +507,109 @@ TRACK.modules.push({
        ]
       }
      ]
+    },
+    {
+     "type": "topology",
+     "title": "Central cloud logging that attackers cannot switch off",
+     "nodes": [
+      {
+       "id": "prod",
+       "kind": "cloud",
+       "label": "Prod accounts",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "guard",
+       "kind": "policy",
+       "label": "Root guardrail",
+       "sub": "no stop-logging",
+       "x": 0,
+       "y": 2
+      },
+      {
+       "id": "dev",
+       "kind": "cloud",
+       "label": "Dev accounts",
+       "x": 1,
+       "y": 3
+      },
+      {
+       "id": "arch",
+       "kind": "storage",
+       "label": "Log archive",
+       "sub": "separate account, write-once",
+       "x": 4,
+       "y": 3
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "sub": "real-time alerts",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "id": "saas",
+       "kind": "saas",
+       "label": "SaaS audit logs",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "soc",
+       "kind": "team",
+       "label": "SOC",
+       "x": 6,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "prod",
+       "b": "arch",
+       "label": "audit, data, flow"
+      },
+      {
+       "a": "dev",
+       "b": "arch"
+      },
+      {
+       "a": "saas",
+       "b": "arch"
+      },
+      {
+       "a": "arch",
+       "b": "siem",
+       "label": "stream"
+      },
+      {
+       "a": "siem",
+       "b": "soc"
+      },
+      {
+       "a": "guard",
+       "b": "prod",
+       "style": "dashed"
+      },
+      {
+       "a": "guard",
+       "b": "dev",
+       "style": "dashed"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Security accounts",
+       "x": 4,
+       "y": 3,
+       "w": 3,
+       "h": 1,
+       "tone": "accent"
+      }
+     ],
+     "caption": "Workload accounts can write logs but never delete them: the archive lives in a separate security account, and a root guardrail blocks the 'stop logging' call that attackers try first."
     },
     {
      "type": "cli",
@@ -497,7 +707,7 @@ TRACK.modules.push({
       "Send control plane, data plane and network logs to a protected account.",
       "Alert in real time on attempts to disable logging."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -665,7 +875,7 @@ TRACK.modules.push({
      "device": "Dockerfile",
      "lines": [
       "# Multi-stage build: compile in one image, ship a minimal one",
-      "FROM golang:1.23 AS build",
+      "FROM golang:1.26 AS build   # use a supported release, pinned by digest",
       "WORKDIR /src",
       "COPY . .",
       "RUN CGO_ENABLED=0 go build -o /out/api ./cmd/api",
@@ -743,10 +953,166 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "sequence",
+     "title": "What happens when a pod is created",
+     "actors": [
+      "Pipeline / kubectl",
+      "API server",
+      "Admission policy",
+      "Node (kubelet)"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Create Deployment"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Authenticate, check RBAC"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Mutating: add safe defaults"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Validating: restricted profile?"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Signed image, approved registry?"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Allow, or deny with reason",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Store desired state"
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Pod scheduled to this node"
+      },
+      {
+       "from": 3,
+       "to": 1,
+       "label": "Image pulled by digest, running",
+       "reply": true
+      }
+     ],
+     "caption": "Admission control is the cluster's last gate: a pod that runs as root, asks for privileges or uses an unsigned image is rejected before any node ever pulls it."
+    },
+    {
      "type": "callout",
      "kind": "example",
      "text": "A shell process (sh, bash) starting inside a container that never runs one, package managers downloading tools at runtime, connections to mining pools, reads of the service account token followed by calls to the Kubernetes API, and writes to unusual paths are strong runtime detection signals.",
      "title": "Signals of a compromised container"
+    },
+    {
+     "type": "topology",
+     "title": "Attack path from one pod to the whole cluster",
+     "nodes": [
+      {
+       "id": "atk",
+       "kind": "attacker",
+       "label": "Attacker",
+       "sub": "exploits web app",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "pool",
+       "kind": "cloud",
+       "label": "Mining pool",
+       "x": 5,
+       "y": 0
+      },
+      {
+       "id": "pod",
+       "kind": "container",
+       "label": "Web pod",
+       "sub": "public namespace",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "api",
+       "kind": "api",
+       "label": "API server",
+       "sub": "accepts SA token",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "nodes",
+       "kind": "server",
+       "label": "All nodes",
+       "sub": "privileged pods",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "sec",
+       "kind": "vault",
+       "label": "Secrets",
+       "sub": "every namespace",
+       "x": 5,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "atk",
+       "b": "pod",
+       "label": "RCE",
+       "style": "attack"
+      },
+      {
+       "a": "pod",
+       "b": "pool",
+       "label": "mining traffic",
+       "style": "attack"
+      },
+      {
+       "a": "pod",
+       "b": "api",
+       "label": "token is cluster-admin",
+       "style": "attack"
+      },
+      {
+       "a": "api",
+       "b": "nodes",
+       "label": "deploy privileged pod",
+       "style": "attack"
+      },
+      {
+       "a": "api",
+       "b": "sec",
+       "label": "read all secrets",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Cluster",
+       "x": 1,
+       "y": 2,
+       "w": 5,
+       "h": 4,
+       "tone": "warn"
+      }
+     ],
+     "caption": "The miner is the visible symptom; the cluster-admin token is the real incident. Namespace-scoped RBAC, no auto-mounted tokens and default-deny egress would stop every red path at the pod."
     },
     {
      "type": "scenario",
@@ -783,7 +1149,7 @@ TRACK.modules.push({
       "Enforce pod security, RBAC and default-deny network policy through admission control.",
       "Watch for shells, tool downloads and API calls from inside containers."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -1019,6 +1385,48 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "timeline",
+     "title": "A leaked-key incident, reconstructed (illustrative, UTC)",
+     "items": [
+      {
+       "when": "09:02",
+       "label": "Key pushed to a public repo",
+       "text": "CI access key committed in a config file."
+      },
+      {
+       "when": "09:06",
+       "label": "First unknown caller",
+       "text": "'Who am I' API call from an unfamiliar IP address."
+      },
+      {
+       "when": "09:11",
+       "label": "Enumeration",
+       "text": "Lists storage, roles and enabled regions."
+      },
+      {
+       "when": "09:19",
+       "label": "Persistence",
+       "text": "Creates a new user with its own access key."
+      },
+      {
+       "when": "09:27",
+       "label": "Impact",
+       "text": "GPU instances launched in three regions."
+      },
+      {
+       "when": "10:48",
+       "label": "Billing alert",
+       "text": "Spend anomaly pages the on-call engineer."
+      },
+      {
+       "when": "10:55",
+       "label": "Containment",
+       "text": "Original key deactivated; hunt for attacker-created access begins."
+      }
+     ],
+     "caption": "Illustrative but typical: public repositories are scraped within minutes, and the attacker created a second key long before anyone noticed. Deactivating the leaked key at 10:55 does not touch the access created at 09:19."
+    },
+    {
      "type": "callout",
      "kind": "warning",
      "text": "In cloud incidents, attackers frequently create new access keys, add a trust relationship to an external account or deploy a small function that re-creates access. Disabling the original key is only the start; hunt for everything created during the attacker's window.",
@@ -1091,7 +1499,7 @@ TRACK.modules.push({
       "Leaked keys: deactivate, scope with audit logs, hunt for persistence, then fix the root cause.",
       "Treat the code repository as the source of truth for cloud configuration."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -1220,7 +1628,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "A widely used community top-ten list of web application risks is revised every few years from real breach and testing data. Rather than memorise its exact wording, security engineers should understand the **families of mistakes** behind it. Three families cause a large share of serious incidents: **broken access control**, **injection** and **broken authentication and session handling**."
+     "text": "A widely used community top-ten list of web application risks (the OWASP Top 10) is revised every few years from real breach and testing data. The 2025 edition, for example, added software supply chain failures and the mishandling of exceptional conditions, and folded server-side request forgery into broken access control. Rather than memorise exact wording, security engineers should understand the **families of mistakes** behind it. Three families cause a large share of serious incidents: **broken access control**, **injection** and **broken authentication and session handling**."
     },
     {
      "type": "table",
@@ -1233,7 +1641,7 @@ TRACK.modules.push({
      "rows": [
       [
        "Broken access control",
-       "Users can act on data or functions they should not reach",
+       "Users, or the server itself as in SSRF, reach data or functions they should not",
        "Deny by default; check ownership on every request on the server side"
       ],
       [
@@ -1257,9 +1665,9 @@ TRACK.modules.push({
        "Hardened, automated configuration"
       ],
       [
-       "Vulnerable components",
-       "Old libraries with known flaws",
-       "Dependency scanning and timely upgrades"
+       "Software supply chain failures",
+       "Vulnerable, malicious or tampered components, build systems or updates",
+       "Inventory with SBOMs, dependency scanning, signed and verified builds"
       ],
       [
        "Authentication failures",
@@ -1272,14 +1680,14 @@ TRACK.modules.push({
        "Signing, verification, safe data formats"
       ],
       [
-       "Logging and monitoring failures",
-       "Attacks happen unseen",
-       "Log security events and alert on them"
+       "Logging and alerting failures",
+       "Attacks happen unseen or alerts reach nobody",
+       "Log security events and route alerts to people who act"
       ],
       [
-       "Server-side request forgery",
-       "The server is tricked into fetching attacker-chosen URLs",
-       "Allow-list destinations; block internal ranges"
+       "Mishandling exceptional conditions",
+       "Errors fail open, leak internal details or leave inconsistent state",
+       "Fail closed, central error handling, test abnormal paths"
       ]
      ]
     },
@@ -1288,6 +1696,69 @@ TRACK.modules.push({
      "kind": "example",
      "text": "A student portal shows results at `/api/results?studentId=20231457`. Changing the number to `20231458` shows another student's marks. Authentication worked; **authorisation** did not, because the server never checked that the requested record belongs to the signed-in user.",
      "title": "Insecure direct object reference"
+    },
+    {
+     "type": "sequence",
+     "title": "An insecure direct object reference, then the fix",
+     "actors": [
+      "Student A's browser",
+      "Results API",
+      "Database"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "GET results?studentId=…457"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Query student …457"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "A's marks",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "GET results?studentId=…458",
+       "note": "one digit changed by hand"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Query student …458",
+       "note": "no ownership check"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "B's marks",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "200 OK: another student's data",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Fixed: record owner = session user?"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "403 Forbidden",
+       "reply": true
+      }
+     ],
+     "caption": "Authentication succeeded every time; the leak at step 7 comes from trusting an ID the client controls. The fix lives in the API, so it protects every client and every future endpoint."
     },
     {
      "type": "cli",
@@ -1386,7 +1857,7 @@ TRACK.modules.push({
       "Parameterised queries and context-aware encoding remove whole bug classes.",
       "Fix patterns centrally and add tests so bugs do not return."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -1560,26 +2031,53 @@ TRACK.modules.push({
      "answer": "Present: broken object-level authorisation (no ownership check), excessive data exposure (full phone numbers), and improper inventory (forgotten v1 without rate limits). Immediate actions: deploy a server-side ownership check, mask phone numbers in responses, disable or gate v1, review API logs for enumeration of merchant IDs and assess notification duties to customers and the regulator. Process changes: authorisation tests in CI for every endpoint, an API catalogue with owners and versions, threat modelling for new APIs, and schema-based response filtering."
     },
     {
-     "type": "flow",
-     "title": "Server-side request forgery (SSRF)",
-     "items": [
+     "type": "sequence",
+     "title": "Server-side request forgery against cloud metadata",
+     "actors": [
+      "Attacker",
+      "Web app",
+      "Metadata service",
+      "Cloud storage API"
+     ],
+     "steps": [
       {
-       "label": "Feature",
-       "text": "App fetches a URL supplied by the user, such as a profile picture link."
+       "from": 0,
+       "to": 1,
+       "label": "Avatar URL = metadata address",
+       "note": "169.254.169.254, link-local"
       },
       {
-       "label": "Abuse",
-       "text": "Attacker supplies an internal address instead."
+       "from": 1,
+       "to": 2,
+       "label": "GET role credentials path"
       },
       {
-       "label": "Reach",
-       "text": "Server fetches internal admin pages or the cloud metadata service."
+       "from": 2,
+       "to": 1,
+       "label": "Temporary role credentials",
+       "note": "old versions answer a plain GET",
+       "reply": true
       },
       {
-       "label": "Steal",
-       "text": "Attacker reads credentials or internal data from the response."
+       "from": 1,
+       "to": 0,
+       "label": "Error page echoes the body",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 3,
+       "label": "List and download buckets",
+       "note": "using the stolen credentials"
+      },
+      {
+       "from": 3,
+       "to": 0,
+       "label": "Customer files",
+       "reply": true
       }
-     ]
+     ],
+     "caption": "The server fetched an address the attacker chose and handed back what it found. Destination allow-lists stop step 1, session-based metadata access stops step 2, and not echoing fetched content stops step 4."
     },
     {
      "type": "checklist",
@@ -1649,7 +2147,7 @@ TRACK.modules.push({
       "Prevent SSRF with destination allow-lists and internal range blocking.",
       "Keep an API inventory and retire old versions."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -1807,6 +2305,38 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "cycle",
+     "title": "Security woven into every delivery phase",
+     "center": "Secure SDLC",
+     "items": [
+      {
+       "label": "Plan",
+       "text": "Security and privacy requirements, abuse cases."
+      },
+      {
+       "label": "Design",
+       "text": "Threat model and secure patterns."
+      },
+      {
+       "label": "Build",
+       "text": "Secure coding standards, IDE checks, peer review."
+      },
+      {
+       "label": "Test",
+       "text": "SAST, SCA, secret scanning, DAST, targeted manual tests."
+      },
+      {
+       "label": "Release",
+       "text": "Signed artefacts, SBOM and provenance, sign-off for risky changes."
+      },
+      {
+       "label": "Operate",
+       "text": "Runtime protection, logging, vulnerability intake, bug bounty."
+      }
+     ],
+     "caption": "Each phase adds a small, repeatable activity, and findings from operations feed the next round of requirements, so security improves with every release instead of waiting for a final gate."
+    },
+    {
      "type": "framework",
      "title": "A simple threat modelling method",
      "items": [
@@ -1881,7 +2411,8 @@ TRACK.modules.push({
        "items": [
         "Lists open-source components and versions",
         "Matches them against known vulnerabilities and licences",
-        "Produces a software bill of materials"
+        "Produces a software bill of materials",
+        "VEX statements record whether a listed vulnerability actually affects the product"
        ]
       },
       {
@@ -1951,6 +2482,128 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "A hardened build and release path",
+     "nodes": [
+      {
+       "id": "dev",
+       "kind": "user",
+       "label": "Developer",
+       "sub": "MFA, signed commits",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "repo",
+       "kind": "server",
+       "label": "Source repo",
+       "sub": "protected branches",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "pub",
+       "kind": "internet",
+       "label": "Public registry",
+       "sub": "typosquats live here",
+       "x": 6,
+       "y": 0
+      },
+      {
+       "id": "kms",
+       "kind": "kms",
+       "label": "Signing key",
+       "sub": "held in KMS or HSM",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "ci",
+       "kind": "process",
+       "label": "Ephemeral runner",
+       "sub": "least-privilege token",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "proxy",
+       "kind": "storage",
+       "label": "Package proxy",
+       "sub": "pinned, names reserved",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "reg",
+       "kind": "storage",
+       "label": "Artefact registry",
+       "sub": "image, SBOM, provenance",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "gate",
+       "kind": "shield",
+       "label": "Deploy gate",
+       "sub": "verifies signature",
+       "x": 5,
+       "y": 4
+      },
+      {
+       "id": "prod",
+       "kind": "container",
+       "label": "Production",
+       "x": 5,
+       "y": 6
+      }
+     ],
+     "links": [
+      {
+       "a": "dev",
+       "b": "repo",
+       "label": "pull request"
+      },
+      {
+       "a": "repo",
+       "b": "ci",
+       "label": "trigger"
+      },
+      {
+       "a": "pub",
+       "b": "proxy",
+       "label": "lookalikes blocked",
+       "style": "attack"
+      },
+      {
+       "a": "proxy",
+       "b": "ci",
+       "label": "vetted deps"
+      },
+      {
+       "a": "kms",
+       "b": "ci",
+       "label": "sign"
+      },
+      {
+       "a": "ci",
+       "b": "reg",
+       "label": "push signed"
+      },
+      {
+       "a": "reg",
+       "b": "gate",
+       "label": "by digest"
+      },
+      {
+       "a": "gate",
+       "b": "prod",
+       "label": "deploy",
+       "style": "bold"
+      }
+     ],
+     "caption": "Each control on the path answers one layer of the attack surface above: reviewed source, vetted dependencies, a throwaway build machine, signed artefacts with provenance and a gate that refuses anything unsigned."
+    },
+    {
      "type": "checklist",
      "title": "Supply chain controls",
      "items": [
@@ -1963,6 +2616,53 @@ TRACK.modules.push({
       "Artefacts signed and verified before deployment",
       "Build provenance recorded so you can prove how an artefact was made"
      ]
+    },
+    {
+     "type": "timeline",
+     "title": "Supply-chain wake-up calls and the rules that followed",
+     "items": [
+      {
+       "when": "Dec 2020",
+       "label": "Build system compromise",
+       "text": "A trojanised update of a network-management product reaches thousands of customers."
+      },
+      {
+       "when": "May 2021",
+       "label": "SBOMs enter policy",
+       "text": "A US executive order pushes secure development attestations and SBOMs for suppliers."
+      },
+      {
+       "when": "Dec 2021",
+       "label": "Log4Shell",
+       "text": "A flaw in a ubiquitous logging library; teams without inventories cannot find it."
+      },
+      {
+       "when": "Mar 2024",
+       "label": "Compression library backdoor",
+       "text": "A trusted maintainer identity slips a backdoor into a core open-source package; caught by chance."
+      },
+      {
+       "when": "Dec 2024",
+       "label": "EU Cyber Resilience Act in force",
+       "text": "Security duties for products with digital elements, including SBOMs."
+      },
+      {
+       "when": "Sep 2025",
+       "label": "Self-spreading registry worm",
+       "text": "Malicious packages steal maintainer tokens and republish themselves in a major JavaScript registry."
+      },
+      {
+       "when": "Sep 2026",
+       "label": "CRA reporting duties",
+       "text": "Manufacturers must report actively exploited vulnerabilities and severe incidents."
+      },
+      {
+       "when": "Dec 2027",
+       "label": "CRA fully applies",
+       "text": "Main product obligations apply; check the official timetable."
+      }
+     ],
+     "caption": "Each incident hit through trust in someone else's code or build, and regulation now turns SBOMs, vulnerability handling and incident reporting into legal duties for anyone selling software into the EU."
     },
     {
      "type": "scenario",
@@ -2030,6 +2730,16 @@ TRACK.modules.push({
        "term": "Build provenance",
        "def": "Verifiable information about how, where and from what source an artefact was built."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Put small, repeatable security activities in every phase; design-time fixes are the cheapest.",
+      "Threat model with four questions: what are we building, what can go wrong, what will we do, did we do a good job.",
+      "Automate SAST, secret scanning, SCA with SBOMs and DAST in the pipeline, with visible, expiring exceptions.",
+      "Defend the supply chain end to end: protected source, vetted dependencies, ephemeral runners, signing, provenance and verification at deploy."
      ]
     },
     {
@@ -2107,7 +2817,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "Organisations are adding generative AI to customer service, document search, coding and security operations. These systems combine a **model**, **instructions**, **retrieved data**, **tools** and **users**. Each component brings new risks, and the core challenge is that a language model cannot reliably tell the difference between instructions and data: anything it reads might steer it."
+     "text": "Organisations are adding generative AI to customer service, document search, coding and security operations. These systems combine a **model**, **instructions**, **retrieved data**, **tools** and **users**. Each component brings new risks, and the core challenge is that a language model cannot reliably tell the difference between instructions and data: anything it reads might steer it. Community guidance such as the OWASP Top 10 for LLM Applications (2025 edition) and newer guidance for agentic applications catalogues these risks; the table below describes them in our own words."
     },
     {
      "type": "layers",
@@ -2200,6 +2910,26 @@ TRACK.modules.push({
        "Unbounded consumption",
        "Costly prompts exhaust budgets or capacity",
        "Bot answers 50,000-token requests for free"
+      ],
+      [
+       "System prompt leakage",
+       "Rules, secrets or credentials placed in prompts are revealed",
+       "Pricing logic or an API key pasted into the system prompt"
+      ],
+      [
+       "Vector and embedding weaknesses",
+       "Retrieval stores leak across users or accept poisoned entries",
+       "A shared index returns another department's documents"
+      ],
+      [
+       "Model and tool supply chain",
+       "Tampered models, datasets, plug-ins or tool servers",
+       "A model file that runs code when loaded; a tool description with hidden instructions"
+      ],
+      [
+       "Misinformation",
+       "Confident but false output is relied on",
+       "Bot invents a refund policy the company is then held to"
       ]
      ]
     },
@@ -2210,30 +2940,60 @@ TRACK.modules.push({
      "title": "Why prompt injection is hard to fix"
     },
     {
-     "type": "flow",
-     "title": "An indirect prompt injection attack",
-     "items": [
+     "type": "sequence",
+     "title": "Indirect prompt injection in the hospital assistant",
+     "actors": [
+      "Attacker",
+      "Nurse",
+      "AI assistant",
+      "Mailbox tool",
+      "External address"
+     ],
+     "steps": [
       {
-       "label": "Plant",
-       "text": "Attacker hides instructions in a document, web page or email."
+       "from": 0,
+       "to": 3,
+       "label": "Email with hidden instructions"
       },
       {
-       "label": "Retrieve",
-       "text": "The AI assistant reads that content while helping a user."
+       "from": 1,
+       "to": 2,
+       "label": "Summarise my inbox"
       },
       {
-       "label": "Hijack",
-       "text": "The hidden text tells the model to take an action or change its answer."
+       "from": 2,
+       "to": 3,
+       "label": "Read recent emails"
       },
       {
-       "label": "Act",
-       "text": "The model calls a tool: sends data, edits a record or shows a malicious link."
+       "from": 3,
+       "to": 2,
+       "label": "Emails, incl. hidden text",
+       "reply": true
       },
       {
-       "label": "Impact",
-       "text": "Data leaves the organisation or the user is misled, under the user's authority."
+       "from": 2,
+       "to": 2,
+       "label": "Treats hidden text as a task"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Forward 20 transfer emails"
+      },
+      {
+       "from": 3,
+       "to": 4,
+       "label": "Patient data leaves"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Here is your summary",
+       "reply": true
       }
-     ]
+     ],
+     "caption": "The nurse never sees the attack: she asked for a summary and got one. The harm happens at step 6, so the durable fixes are there: a draft-only mail tool, confirmation for external recipients and separating 'read untrusted content' from 'take actions'."
     },
     {
      "type": "case",
@@ -2305,7 +3065,7 @@ TRACK.modules.push({
       "Excessive agency turns a manipulated model into a real-world incident.",
       "Treat model output as untrusted input to other systems."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -2463,39 +3223,172 @@ TRACK.modules.push({
       {
        "label": "A8",
        "title": "Supply chain",
-       "text": "Vet models, datasets and plug-ins; verify model files and sources."
+       "text": "Vet models, datasets, plug-ins and tool servers; pin versions by hash and prefer weight formats that cannot execute code when loaded."
       }
      ]
     },
     {
-     "type": "steps",
-     "title": "AI red teaming and evaluation",
+     "type": "topology",
+     "title": "A defended LLM application",
+     "nodes": [
+      {
+       "id": "model",
+       "kind": "model",
+       "label": "LLM",
+       "sub": "untrusted component",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "apis",
+       "kind": "api",
+       "label": "Business APIs",
+       "sub": "user's own rights",
+       "x": 6,
+       "y": 0
+      },
+      {
+       "id": "orch",
+       "kind": "process",
+       "label": "Orchestrator",
+       "sub": "plans, never decides alone",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "broker",
+       "kind": "shield",
+       "label": "Tool broker",
+       "sub": "allow-list, policy",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "rag",
+       "kind": "db",
+       "label": "Retrieval index",
+       "sub": "filtered by user ACL",
+       "x": 1,
+       "y": 3
+      },
+      {
+       "id": "gw",
+       "kind": "gateway",
+       "label": "AI gateway",
+       "sub": "screening, limits",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "appr",
+       "kind": "user",
+       "label": "Human approval",
+       "sub": "send, pay, delete",
+       "x": 6,
+       "y": 4
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "sub": "prompts, tool calls",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "user",
+       "kind": "user",
+       "label": "Staff user",
+       "sub": "signed in",
+       "x": 3,
+       "y": 6
+      }
+     ],
+     "links": [
+      {
+       "a": "user",
+       "b": "gw"
+      },
+      {
+       "a": "gw",
+       "b": "orch"
+      },
+      {
+       "a": "orch",
+       "b": "model",
+       "label": "prompt + context"
+      },
+      {
+       "a": "orch",
+       "b": "rag",
+       "label": "query as user"
+      },
+      {
+       "a": "orch",
+       "b": "broker",
+       "label": "tool request"
+      },
+      {
+       "a": "broker",
+       "b": "apis",
+       "label": "scoped call"
+      },
+      {
+       "a": "broker",
+       "b": "appr",
+       "label": "high impact",
+       "style": "dashed"
+      },
+      {
+       "a": "gw",
+       "b": "siem",
+       "label": "logs",
+       "style": "dashed"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Untrusted",
+       "x": 1,
+       "y": 1,
+       "w": 1,
+       "h": 1,
+       "tone": "warn"
+      }
+     ],
+     "caption": "The model only proposes. Deterministic code around it screens input, retrieves only what this user may see, checks every tool call against policy and sends high-impact actions to a person."
+    },
+    {
+     "type": "cycle",
+     "title": "AI red teaming and evaluation loop",
+     "center": "Every release",
      "items": [
       {
-       "title": "Define harms",
-       "text": "List what must never happen: data leaks, unauthorised actions, harmful advice, policy breaches."
+       "label": "Define harms",
+       "text": "What must never happen: data leaks, unauthorised actions, harmful advice, policy breaches."
       },
       {
-       "title": "Build test sets",
-       "text": "Direct and indirect injection prompts, jailbreak styles, Bangla and English variants, poisoned documents."
+       "label": "Build test sets",
+       "text": "Direct and indirect injection, jailbreak styles, Bangla and English variants, poisoned documents."
       },
       {
-       "title": "Test the whole system",
+       "label": "Test whole system",
        "text": "Attack the deployed app with its tools and retrieval, not just the bare model."
       },
       {
-       "title": "Measure",
-       "text": "Track attack success rate and false refusals for each release."
+       "label": "Measure",
+       "text": "Attack success rate and false refusals per harm category."
       },
       {
-       "title": "Fix and retest",
+       "label": "Fix and retest",
        "text": "Change architecture, permissions or guardrails, then rerun the suite."
       },
       {
-       "title": "Monitor in production",
+       "label": "Monitor production",
        "text": "Feed real incidents and new techniques back into the test sets."
       }
-     ]
+     ],
+     "caption": "Models, prompts and attack techniques all change, so evaluation is a loop that runs before every release and keeps learning from production."
     },
     {
      "type": "formula",
@@ -2593,7 +3486,7 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "pro",
-     "text": "Many countries and sectors are publishing AI risk management frameworks and laws that expect inventories of AI systems, risk classification, human oversight, testing records and incident reporting. Building these records as you go is far easier than reconstructing them for a regulator later.",
+     "text": "AI rules now expect inventories of AI systems, risk classification, human oversight, testing records and incident reporting. The EU AI Act entered into force in 2024 and applies in stages (prohibited practices from 2025, general-purpose model duties from August 2025, most high-risk obligations later, with proposals to adjust some dates), so check the current official timetable. Voluntary frameworks such as the NIST AI Risk Management Framework and the ISO/IEC 42001 AI management system standard help structure the work. Building these records as you go is far easier than reconstructing them later.",
      "title": "Align with emerging AI rules"
     },
     {
@@ -2658,6 +3551,16 @@ TRACK.modules.push({
        "term": "Shadow AI",
        "def": "Use of AI tools by staff without approval or oversight."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Treat the model as an untrusted component and let deterministic code enforce permissions.",
+      "Give tools least privilege and require human approval for high-impact actions.",
+      "Red-team the whole deployed system every release and track attack success and false refusal rates.",
+      "Govern AI use: approved tools, model and data inventories, supply-chain checks and alignment with emerging rules."
      ]
     },
     {
@@ -2804,6 +3707,136 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "A logging pipeline from source to evidence",
+     "nodes": [
+      {
+       "id": "cloud",
+       "kind": "cloud",
+       "label": "Cloud audit",
+       "sub": "control plane",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "idp",
+       "kind": "idp",
+       "label": "Identity provider",
+       "sub": "sign-ins, MFA",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "saas",
+       "kind": "saas",
+       "label": "Email and SaaS",
+       "sub": "mail audit",
+       "x": 5,
+       "y": 1
+      },
+      {
+       "id": "ntp",
+       "kind": "process",
+       "label": "Time source",
+       "sub": "NTP, UTC everywhere",
+       "x": 0,
+       "y": 3
+      },
+      {
+       "id": "coll",
+       "kind": "process",
+       "label": "Collectors",
+       "sub": "parse, buffer, forward",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "sub": "hot: 90 days",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "id": "ep",
+       "kind": "laptop",
+       "label": "Endpoints",
+       "sub": "EDR telemetry",
+       "x": 1,
+       "y": 5
+      },
+      {
+       "id": "srv",
+       "kind": "server",
+       "label": "Servers",
+       "sub": "OS logs, auditd",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "id": "net",
+       "kind": "firewall",
+       "label": "Network logs",
+       "sub": "firewall, proxy, DNS",
+       "x": 5,
+       "y": 5
+      },
+      {
+       "id": "arch",
+       "kind": "storage",
+       "label": "Archive",
+       "sub": "write-once, 1 year+",
+       "x": 6,
+       "y": 6
+      }
+     ],
+     "links": [
+      {
+       "a": "cloud",
+       "b": "coll"
+      },
+      {
+       "a": "idp",
+       "b": "coll"
+      },
+      {
+       "a": "saas",
+       "b": "coll"
+      },
+      {
+       "a": "ep",
+       "b": "coll"
+      },
+      {
+       "a": "srv",
+       "b": "coll"
+      },
+      {
+       "a": "net",
+       "b": "coll"
+      },
+      {
+       "a": "ntp",
+       "b": "coll",
+       "label": "time sync",
+       "style": "dashed"
+      },
+      {
+       "a": "coll",
+       "b": "siem",
+       "label": "within minutes",
+       "style": "bold"
+      },
+      {
+       "a": "siem",
+       "b": "arch",
+       "label": "tiered"
+      }
+     ],
+     "caption": "Identity, endpoint and cloud sources feed the same pipeline with one clock. Fast forwarding means an attacker who clears a host's log is too late, and the write-once archive keeps evidence for the investigations that start months later."
+    },
+    {
      "type": "cli",
      "title": "Useful Windows audit settings",
      "device": "PowerShell",
@@ -2901,6 +3934,46 @@ TRACK.modules.push({
      "rows": 8
     },
     {
+     "type": "chart",
+     "kind": "bar",
+     "title": "Volume versus detection value by log source",
+     "labels": [
+      "Firewall allow",
+      "EDR",
+      "Identity",
+      "Email",
+      "Cloud audit",
+      "DNS"
+     ],
+     "series": [
+      {
+       "name": "Share of SIEM volume",
+       "values": [
+        60,
+        12,
+        6,
+        8,
+        6,
+        8
+       ]
+      },
+      {
+       "name": "Share of confirmed detections",
+       "values": [
+        5,
+        35,
+        25,
+        15,
+        12,
+        8
+       ]
+      }
+     ],
+     "unit": "%",
+     "yLabel": "% of total",
+     "caption": "Illustrative figures for a mid-sized organisation, not survey data. The pattern is common, though: raw allow logs dominate cost while identity and endpoint telemetry produce most confirmed detections. Measure your own split before deciding."
+    },
+    {
      "type": "scenario",
      "title": "Budget versus visibility",
      "situation": "A hospital's SIEM licence is priced by data volume. Firewall 'allow' logs make up 60% of volume, and the team cannot afford to add EDR and identity logs. What is the best decision?",
@@ -2962,6 +4035,16 @@ TRACK.modules.push({
        "term": "Event 4688",
        "def": "The Windows security event recording process creation, optionally with the command line."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Collect identity, endpoint and cloud control-plane logs first; they answer the most investigation questions.",
+      "Synchronise clocks, store UTC, forward quickly and protect central logs from deletion.",
+      "Keep searchable data for at least 90 days and archives for as long as investigations and regulation require.",
+      "Alert when a source goes silent, and spend volume budget where detection value is highest."
      ]
     },
     {
@@ -3161,10 +4244,115 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "tree",
+     "title": "Deciding an alert's outcome",
+     "root": {
+      "label": "Did the rule match the behaviour it targets?",
+      "children": [
+       {
+        "label": "No",
+        "children": [
+         {
+          "label": "False positive",
+          "text": "close with evidence, request tuning"
+         }
+        ]
+       },
+       {
+        "label": "Yes",
+        "children": [
+         {
+          "label": "Authorised activity",
+          "text": "for example an approved test",
+          "children": [
+           {
+            "label": "Benign true positive",
+            "text": "document; scoped, expiring exception"
+           }
+          ]
+         },
+         {
+          "label": "Not authorised",
+          "children": [
+           {
+            "label": "True positive",
+            "text": "escalate with a clear summary"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "Two questions settle most alerts. Keeping 'benign true positive' separate from 'false positive' matters: one means the rule works and needs a narrow exception, the other means the rule needs fixing."
+    },
+    {
      "type": "callout",
      "kind": "pro",
      "text": "Good SOAR playbooks enrich alerts automatically (asset owner, user's recent sign-ins, reputation of hashes and domains), open tickets, and run safe containment such as disabling a clearly compromised account with an approval step. Leave ambiguous decisions to analysts and review automations regularly.",
      "title": "Automate the boring, not the judgement"
+    },
+    {
+     "type": "sequence",
+     "title": "A SOAR playbook with a human approval step",
+     "actors": [
+      "SIEM",
+      "SOAR",
+      "Intel and asset data",
+      "Analyst",
+      "Identity provider"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Alert: external forwarding rule"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Who owns it? IP reputation?"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "CFO mailbox; new risky IP",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Raise severity, open ticket"
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Approve containment?"
+      },
+      {
+       "from": 3,
+       "to": 1,
+       "label": "Approved",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 4,
+       "label": "Revoke sessions, remove rule"
+      },
+      {
+       "from": 4,
+       "to": 1,
+       "label": "Done",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Evidence pack and next steps"
+      }
+     ],
+     "caption": "Automation does the lookups in seconds and the analyst makes the one decision that needs judgement; the playbook then acts consistently and records every step for the incident file."
     },
     {
      "type": "case",
@@ -3239,6 +4427,16 @@ TRACK.modules.push({
        "term": "Stacking",
        "def": "Counting how often values occur across many systems to find rare outliers."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "A SIEM collects, parses, normalises, enriches and correlates; SOAR automates enrichment and safe response steps.",
+      "Learn a few reusable query patterns: per-user timelines, stacking rare values and volume outliers.",
+      "Triage the same way every time and record why each alert was closed or escalated.",
+      "Automate the lookups, not the judgement calls."
      ]
     },
     {
@@ -3319,20 +4517,21 @@ TRACK.modules.push({
      "text": "**Detection engineering** is the discipline of building reliable detections. Instead of enabling vendor defaults and hoping, engineers start from a threat, understand the behaviour and its data, write a rule, test it against real attack simulations and benign activity, and keep improving it. Rules live in version control with reviews, just like code: **detection as code**."
     },
     {
-     "type": "flow",
-     "title": "Detection life cycle",
+     "type": "cycle",
+     "title": "Detection lifecycle",
+     "center": "Detection as code",
      "items": [
       {
        "label": "Requirement",
-       "text": "A threat or technique from intelligence, incidents or coverage gaps."
+       "text": "A technique from intelligence, incidents or coverage gaps."
       },
       {
        "label": "Research",
-       "text": "How does the behaviour look in logs? What does normal look like?"
+       "text": "How does it look in logs, and what does normal look like?"
       },
       {
        "label": "Build",
-       "text": "Write the rule and a response guide."
+       "text": "Write the rule and its response guide."
       },
       {
        "label": "Test",
@@ -3344,9 +4543,10 @@ TRACK.modules.push({
       },
       {
        "label": "Tune and review",
-       "text": "Track performance; retire or improve rules that age."
+       "text": "Track performance; improve or retire rules that age."
       }
-     ]
+     ],
+     "caption": "Rules are never done: performance data and new intelligence send each one back round the loop, and retiring a rule is a valid outcome."
     },
     {
      "type": "cli",
@@ -3365,7 +4565,7 @@ TRACK.modules.push({
       "  condition: parent and child",
       "falsepositives: ['Signed internal add-ins (document and allow-list them)']",
       "level: high",
-      "tags: [execution, initial_access]"
+      "tags: [attack.execution, attack.t1059.001, attack.t1204.002]"
      ],
      "note": "Generic, vendor-neutral rule formats can be converted into many SIEM query languages. Keep the response guide next to the rule."
     },
@@ -3448,6 +4648,72 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "sequence",
+     "title": "Detection as code: from pull request to production",
+     "actors": [
+      "Engineer",
+      "Repository",
+      "CI pipeline",
+      "Test lab",
+      "SIEM"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Pull request: rule + tests"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Run checks"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Lint, convert to SIEM query"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Run atomic test"
+      },
+      {
+       "from": 3,
+       "to": 2,
+       "label": "Telemetry captured",
+       "reply": true
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Fires on attack, quiet on 30 days"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Checks passed",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Peer review, merge"
+      },
+      {
+       "from": 2,
+       "to": 4,
+       "label": "Deploy on merge"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Scheduled re-test, weekly"
+      }
+     ],
+     "caption": "The same pipeline that ships a rule keeps testing it, so a parser change or broken agent shows up as a failed test rather than weeks of silence."
+    },
+    {
      "type": "callout",
      "kind": "warning",
      "text": "A log source changes format, an agent update renames a field or a parser fails, and a rule stops matching anything. Nobody notices because silence looks like safety. Continuous testing of detections is the only reliable safeguard.",
@@ -3488,7 +4754,7 @@ TRACK.modules.push({
       "Test continuously with safe simulations; silent rules are broken rules.",
       "Measure precision, recall and time to detect."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -3641,8 +4907,9 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
+     "type": "cycle",
      "title": "The intelligence cycle",
+     "center": "Decisions",
      "items": [
       {
        "label": "Direction",
@@ -3650,7 +4917,7 @@ TRACK.modules.push({
       },
       {
        "label": "Collection",
-       "text": "Gather from feeds, sharing groups, national CERTs, vendors, your own incidents."
+       "text": "Feeds, sharing groups, national CERTs, vendors, your own incidents."
       },
       {
        "label": "Processing",
@@ -3666,9 +4933,10 @@ TRACK.modules.push({
       },
       {
        "label": "Feedback",
-       "text": "Ask whether it helped; adjust requirements."
+       "text": "Did it help? Adjust the requirements."
       }
-     ]
+     ],
+     "caption": "Everything turns around the decisions intelligence must support; feedback from the people who used it decides what to collect next."
     },
     {
      "type": "template",
@@ -3800,7 +5068,7 @@ TRACK.modules.push({
       "Indicators expire quickly; TTPs last and feed detection and hunting.",
       "Respect TLP labels and score feeds for quality."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -3947,12 +5215,13 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
+     "type": "cycle",
      "title": "The hunt loop",
+     "center": "Hypothesis-led hunt",
      "items": [
       {
        "label": "Hypothesis",
-       "text": "State what the attacker would do and why here."
+       "text": "State what the attacker would do here, and why."
       },
       {
        "label": "Data",
@@ -3968,9 +5237,10 @@ TRACK.modules.push({
       },
       {
        "label": "Improve",
-       "text": "Write detections, fix visibility, start incident response if needed."
+       "text": "Write detections, fix visibility or start incident response."
       }
-     ]
+     ],
+     "caption": "Every turn of the loop leaves something behind (a detection, a fixed gap or a finding), and the next hypothesis starts from what the last hunt revealed."
     },
     {
      "type": "cli",
@@ -3985,6 +5255,34 @@ TRACK.modules.push({
       "// New services installed (System log 7045) from user-writable paths",
       "WindowsEvents | where EventID == 7045 and ImagePath has_any ('\\\\Users\\\\', '\\\\ProgramData\\\\', '\\\\Temp\\\\')"
      ]
+    },
+    {
+     "type": "chart",
+     "kind": "bar",
+     "title": "Stacking result: servers per scheduled-task command",
+     "labels": [
+      "OS update",
+      "AV update",
+      "Backup agent",
+      "Inventory agent",
+      "Printer helper",
+      "svchelper (AppData)"
+     ],
+     "series": [
+      {
+       "name": "Servers with this task",
+       "values": [
+        412,
+        410,
+        388,
+        356,
+        74,
+        2
+       ]
+      }
+     ],
+     "yLabel": "servers",
+     "caption": "Illustrative output of the first query. Common tasks sit on hundreds of servers; the command found on only two servers, running from a user-writable path, is the lead worth investigating."
     },
     {
      "type": "cli",
@@ -4112,6 +5410,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Hunting assumes compromise and tests a specific hypothesis against data.",
+      "Stacking, baselining and pivoting turn huge datasets into a few leads.",
+      "Every hunt ends with a decision: a finding for IR, a new detection, a visibility gap or a documented negative.",
+      "Never claim 'clean' for systems the hunt could not see."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -4201,11 +5509,12 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "An **incident** is an event that actually or potentially harms the confidentiality, integrity or availability of systems or data, or breaks security policy. **Incident response (IR)** is the organised way to handle it. Most of the outcome is decided before the incident starts: by preparation, practised roles and clear authority to act."
+     "text": "An **incident** is an event that actually or potentially harms the confidentiality, integrity or availability of systems or data, or breaks security policy. **Incident response (IR)** is the organised way to handle it. Most of the outcome is decided before the incident starts: by preparation, practised roles and clear authority to act. Current guidance (NIST SP 800-61 Revision 3, 2025) places response inside the CSF 2.0 functions, so preparation and lessons learned belong to everyday governance; the classic phases below remain the practical way to run the incident itself."
     },
     {
-     "type": "flow",
+     "type": "cycle",
      "title": "The incident response life cycle",
+     "center": "Lessons feed preparation",
      "items": [
       {
        "label": "Prepare",
@@ -4229,9 +5538,10 @@ TRACK.modules.push({
       },
       {
        "label": "Learn",
-       "text": "Post-incident review and improvements to controls and plans."
+       "text": "Post-incident review that changes controls and plans."
       }
-     ]
+     ],
+     "caption": "Real incidents loop back: new evidence during recovery can reopen analysis and containment, and every review should change something in preparation."
     },
     {
      "type": "table",
@@ -4301,6 +5611,61 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "sequence",
+     "title": "Escalating a SEV-1 at 01:30",
+     "actors": [
+      "SOC analyst",
+      "IR lead",
+      "Incident commander",
+      "Legal and comms",
+      "Regulator or CERT"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Confirmed: ransomware on 3 servers"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Declare SEV-1, open bridge"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Scope, impact, options"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Authorise isolating site links",
+       "reply": true
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Engage: possible data theft"
+      },
+      {
+       "from": 3,
+       "to": 3,
+       "label": "Start notification clocks"
+      },
+      {
+       "from": 3,
+       "to": 4,
+       "label": "Early warning sent"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Hourly updates, out of band"
+      }
+     ],
+     "caption": "Each role does one job: the analyst confirms, the IR lead runs the technical work, the commander decides and legal starts the clocks. A named deputy steps in if anyone in this chain is unreachable."
+    },
+    {
      "type": "checklist",
      "title": "IR preparation essentials",
      "items": [
@@ -4319,6 +5684,38 @@ TRACK.modules.push({
      "kind": "warning",
      "text": "Regulators, data protection laws, sector rules, contracts and insurers can each set deadlines for notifying them, some measured in hours. Financial institutions, telecom operators and critical infrastructure often have specific reporting duties to their regulator and the national CERT. Map these obligations in advance and put the deadlines in the plan; do not discover them during the incident.",
      "title": "Know your notification clocks"
+    },
+    {
+     "type": "timeline",
+     "title": "Example reporting clock: EU NIS2 significant incident",
+     "items": [
+      {
+       "when": "T + 0",
+       "label": "Awareness",
+       "text": "The organisation becomes aware of a significant incident."
+      },
+      {
+       "when": "T + 24 h",
+       "label": "Early warning",
+       "text": "Notice to the CSIRT or authority, flagging suspected malicious or cross-border impact."
+      },
+      {
+       "when": "T + 72 h",
+       "label": "Incident notification",
+       "text": "Updated assessment: severity, impact and indicators of compromise."
+      },
+      {
+       "when": "On request",
+       "label": "Intermediate report",
+       "text": "Status updates when the authority asks."
+      },
+      {
+       "when": "+ 1 month",
+       "label": "Final report",
+       "text": "Root cause, mitigations and cross-border impact, counted from the notification."
+      }
+     ],
+     "caption": "One regime among several: personal-data breaches usually have their own 72-hour clock to the data protection authority, and financial, telecom and national rules may be shorter. Put every applicable clock in the plan before you need it."
     },
     {
      "type": "template",
@@ -4387,7 +5784,7 @@ TRACK.modules.push({
       "Map notification duties and deadlines in advance.",
       "Keep plans and contacts available offline and out of band."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -4614,9 +6011,116 @@ TRACK.modules.push({
      "answer": "Containment: (1) isolate site links and the data centre from user networks to stop spread; (2) disconnect the domain-joined backup appliance and protect the offline copy; (3) disable known compromised and all privileged accounts, preparing a clean admin path; (4) block identified C2 and exfiltration destinations at the edge; (5) preserve evidence from a sample of affected hosts and servers before rebuilding. Recovery: prioritise the systems needed for Tuesday's shipment (ERP, production planning, shipping documents), rebuild them in a clean, segmented environment from known-good images, restore data from the offline copy, re-enter changes since Sunday from paper and email records, and monitor closely; consider manual workarounds for shipping documents. Beyond IT: executive incident commander, legal counsel, the cyber insurer and its approved IR firm, HR (employee data), communications, the buyer relationship team, law enforcement and any sector or data protection notifications. Decisions about any ransom demand are for executives with legal advice and law enforcement input, not the technical team."
     },
     {
+     "type": "topology",
+     "title": "Containment cut points in the garment group case",
+     "nodes": [
+      {
+       "id": "c2",
+       "kind": "attacker",
+       "label": "Attacker C2",
+       "sub": "block at the edge (4)",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "fsg",
+       "kind": "server",
+       "label": "Gazipur files",
+       "sub": "encrypting",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "wan",
+       "kind": "router",
+       "label": "Site WAN links",
+       "sub": "cut first (1)",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "dc",
+       "kind": "server",
+       "label": "Dhaka DCs",
+       "sub": "disable privileged accounts (3)",
+       "x": 5,
+       "y": 1
+      },
+      {
+       "id": "bk",
+       "kind": "storage",
+       "label": "Backup appliance",
+       "sub": "domain-joined: disconnect (2)",
+       "x": 7,
+       "y": 1
+      },
+      {
+       "id": "fsd",
+       "kind": "server",
+       "label": "Dhaka files",
+       "sub": "preserve evidence (5)",
+       "x": 5,
+       "y": 3
+      },
+      {
+       "id": "pcs",
+       "kind": "laptop",
+       "label": "Planning PCs",
+       "sub": "ransom notes",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "off",
+       "kind": "storage",
+       "label": "Offline copy",
+       "sub": "last Sunday: protect",
+       "x": 7,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "pcs",
+       "b": "fsg",
+       "label": "encryption",
+       "style": "attack"
+      },
+      {
+       "a": "fsg",
+       "b": "wan",
+       "label": "spread",
+       "style": "attack"
+      },
+      {
+       "a": "wan",
+       "b": "dc"
+      },
+      {
+       "a": "wan",
+       "b": "fsd",
+       "label": "spread",
+       "style": "attack"
+      },
+      {
+       "a": "dc",
+       "b": "bk",
+       "label": "domain trust",
+       "style": "dashed"
+      },
+      {
+       "a": "fsg",
+       "b": "c2",
+       "label": "data theft",
+       "style": "attack"
+      }
+     ],
+     "caption": "Numbers follow the containment order in the model answer. The offline copy has no link at all, which is exactly why it is the recovery source; the domain-joined appliance has to be cut off before the attacker reaches it."
+    },
+    {
      "type": "callout",
      "kind": "insight",
-     "text": "Many ransomware groups now steal data before encrypting it, then threaten to publish it. Good backups solve availability, not confidentiality. Investigations must establish what data left, because that drives notification duties and customer communications.",
+     "text": "Many ransomware groups now steal data before encrypting it, then threaten to publish it, and some skip encryption altogether and extort with stolen data alone. Good backups solve availability, not confidentiality. Investigations must establish what data left, because that drives notification duties and customer communications. Any decision about a ransom demand needs executives, legal advice and sanctions checks, and some jurisdictions now require payments to be reported.",
      "title": "Double extortion changes the maths"
     },
     {
@@ -4654,7 +6158,7 @@ TRACK.modules.push({
       "Backups fix availability, not stolen data.",
       "Use playbooks for the incidents you see most often."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -4713,7 +6217,7 @@ TRACK.modules.push({
         "Contacting the bank to attempt recall of the payment",
         "Rewriting the email security policy",
         "Running a phishing simulation for the accounts payable team",
-        "Changing the company logo in emails"
+        "Blocking the supplier's email domain at the gateway"
        ],
        "answer": 0,
        "explain": "Recovery chances fall quickly as money moves on."
@@ -4939,6 +6443,53 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "timeline",
+     "title": "Reconstructed timeline for FIN-PC-22 (illustrative, UTC)",
+     "items": [
+      {
+       "when": "3 Mar 08:14",
+       "label": "Phishing email delivered",
+       "text": "Mail gateway log: invoice lure to a finance user."
+      },
+      {
+       "when": "08:21",
+       "label": "Attachment opened",
+       "text": "EDR and Prefetch: excel.exe starts powershell.exe."
+      },
+      {
+       "when": "08:22",
+       "label": "Loader runs",
+       "text": "Memory image: injected rundll32; proxy log shows the download."
+      },
+      {
+       "when": "08:40",
+       "label": "Persistence",
+       "text": "Scheduled task created (event 4698)."
+      },
+      {
+       "when": "4 Mar 02:10",
+       "label": "Credential access",
+       "text": "EDR: renamed tool reads LSASS memory."
+      },
+      {
+       "when": "02:35",
+       "label": "Lateral movement",
+       "text": "Network logon to the file server (4624, type 3)."
+      },
+      {
+       "when": "03:05–04:30",
+       "label": "Staging and exfiltration",
+       "text": "Archive created; 18 GB to cloud storage (flow logs)."
+      },
+      {
+       "when": "5 Mar 09:00",
+       "label": "Detection",
+       "text": "Hunt finds the task; incident declared."
+      }
+     ],
+     "caption": "Illustrative timeline built from five sources, each entry citing its evidence. It anchors on the confirmed scheduled task, works back to the first email and forward to exfiltration, and shows a dwell time of just over two days."
+    },
+    {
      "type": "callout",
      "kind": "warning",
      "text": "Logging in to a compromised host with an admin account, running tools from its disk, or browsing its files changes timestamps and can expose your credentials to the attacker. Use remote, read-only collection tools or capture images and analyse copies.",
@@ -4979,7 +6530,7 @@ TRACK.modules.push({
       "Keep a complete chain of custody for every item.",
       "Build timelines in UTC from many sources and mark gaps honestly."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -5046,7 +6597,7 @@ TRACK.modules.push({
       {
        "q": "Which Windows artefact helps show that a program was executed?",
        "options": [
-        "The desktop wallpaper",
+        "The hosts file",
         "Font cache",
         "Printer spool settings only",
         "Prefetch"
@@ -5178,6 +6729,126 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Backups that survive a domain compromise",
+     "nodes": [
+      {
+       "id": "prod",
+       "kind": "server",
+       "label": "Prod servers",
+       "sub": "domain-joined",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "bsrv",
+       "kind": "server",
+       "label": "Backup server",
+       "sub": "own identity, MFA",
+       "x": 4,
+       "y": 1
+      },
+      {
+       "id": "imm",
+       "kind": "storage",
+       "label": "Immutable store",
+       "sub": "object lock, 30 days",
+       "x": 6,
+       "y": 1
+      },
+      {
+       "id": "dom",
+       "kind": "server",
+       "label": "Prod directory",
+       "x": 1,
+       "y": 3
+      },
+      {
+       "id": "badm",
+       "kind": "user",
+       "label": "Backup admins",
+       "sub": "separate accounts, PAW",
+       "x": 4,
+       "y": 3
+      },
+      {
+       "id": "off",
+       "kind": "storage",
+       "label": "Offline copy",
+       "sub": "weekly, disconnected",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "id": "atk",
+       "kind": "attacker",
+       "label": "Attacker",
+       "sub": "holds domain admin",
+       "x": 1,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "prod",
+       "b": "bsrv",
+       "label": "agent sends data"
+      },
+      {
+       "a": "bsrv",
+       "b": "imm",
+       "label": "write once",
+       "style": "bold"
+      },
+      {
+       "a": "bsrv",
+       "b": "off",
+       "label": "weekly",
+       "style": "dashed"
+      },
+      {
+       "a": "badm",
+       "b": "bsrv",
+       "label": "MFA"
+      },
+      {
+       "a": "dom",
+       "b": "prod"
+      },
+      {
+       "a": "atk",
+       "b": "dom",
+       "label": "controls",
+       "style": "attack"
+      },
+      {
+       "a": "atk",
+       "b": "bsrv",
+       "label": "no shared login",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Production domain",
+       "x": 1,
+       "y": 1,
+       "w": 1,
+       "h": 3,
+       "tone": "bad"
+      },
+      {
+       "label": "Backup environment",
+       "x": 4,
+       "y": 1,
+       "w": 3,
+       "h": 3,
+       "tone": "good"
+      }
+     ],
+     "caption": "The attacker owns the production domain but gains nothing on the backup side: different identities, MFA, a write-once store and an offline copy. This is the 1 offline-or-immutable rule made concrete."
+    },
+    {
      "type": "template",
      "title": "Post-incident review",
      "purpose": "Capture what happened, what worked, what did not, and the actions that will change outcomes next time.",
@@ -5225,6 +6896,53 @@ TRACK.modules.push({
       "How would you prove to the board that resilience has improved?"
      ],
      "answer": "Root causes: backup infrastructure shared credentials with the production domain (allowing attackers to reach it); restore procedures were never tested for the most critical system; the IR plan was not available offline; downtime procedures were not trained. Priority actions: isolate backup administration with separate credentials, MFA and immutable copies; run full restore tests of the patient administration and other tier-one clinical systems with measured times against RTO; and keep offline copies of the IR plan and run downtime drills with clinical staff. Proof for the board: tested restore times versus RTO and RPO, results of a tabletop and a technical recovery exercise, percentage of critical systems with immutable backups, and closure rate of review actions."
+    },
+    {
+     "type": "chart",
+     "kind": "bar",
+     "title": "Restore time against RTO, before and after the fixes",
+     "labels": [
+      "Patient admin",
+      "Lab system",
+      "Pharmacy",
+      "Email",
+      "Finance"
+     ],
+     "series": [
+      {
+       "name": "RTO",
+       "values": [
+        8,
+        12,
+        24,
+        24,
+        48
+       ]
+      },
+      {
+       "name": "Tested restore, before",
+       "values": [
+        19,
+        30,
+        26,
+        40,
+        70
+       ]
+      },
+      {
+       "name": "Tested restore, after",
+       "values": [
+        7,
+        10,
+        20,
+        18,
+        36
+       ]
+      }
+     ],
+     "unit": " h",
+     "yLabel": "hours",
+     "caption": "Illustrative numbers for the hospital case. Measured restore times against each RTO are the kind of evidence a board can trust, far more than a list of tools bought."
     },
     {
      "type": "steps",
@@ -5287,7 +7005,7 @@ TRACK.modules.push({
       "Keep at least one offline or immutable backup with separate credentials.",
       "Blameless reviews must end with owned, dated, tracked actions."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",

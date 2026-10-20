@@ -100,6 +100,45 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "matrix",
+     "title": "Likelihood–impact grid for a risk register",
+     "x": "Likelihood (rare → almost certain)",
+     "y": "Impact (minor → severe)",
+     "quadrants": [
+      {
+       "title": "Prepare and transfer",
+       "items": [
+        "Data-centre fire or flood",
+        "Regional power failure",
+        "Treat with backups, DR and insurance"
+       ]
+      },
+      {
+       "title": "Act now",
+       "items": [
+        "Unpatched internet-facing RCE",
+        "Phished finance mailbox",
+        "Owner decision within days"
+       ]
+      },
+      {
+       "title": "Accept and review",
+       "items": [
+        "Defaced intranet notice board",
+        "Record with an owner and review date"
+       ]
+      },
+      {
+       "title": "Reduce cheaply",
+       "items": [
+        "Daily spam and nuisance scans",
+        "Automate filtering and patching"
+       ]
+      }
+     ],
+     "caption": "Place each risk before arguing about money. Top-right risks need action now; rare but severe risks (top-left) are usually handled with resilience and transfer rather than ever more prevention."
+    },
+    {
      "type": "table",
      "title": "Risk treatment options",
      "head": [
@@ -231,6 +270,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Security protects what matters to the business: confidentiality, integrity and availability, plus safety where systems touch the physical world.",
+      "Risk needs an asset, a threat, a vulnerability, a likelihood and an impact; change any one and the risk changes.",
+      "Use likelihood × impact to rank quickly and ALE to compare a control's cost with the loss it prevents.",
+      "Every risk gets a treatment and a named business owner; undocumented acceptance is neglect."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -282,7 +331,7 @@ TRACK.modules.push({
        "options": [
         "Because safety replaces availability as a security goal in those sectors, so uptime no longer matters",
         "Because regulators ban the CIA triad there",
-        "Because safety is a type of encryption",
+        "Because safety systems never connect to IT networks",
         "Because cyber events in operational systems can harm people physically"
        ],
        "answer": 3,
@@ -358,7 +407,7 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "insight",
-     "text": "Modern cybercrime is specialised. One group writes ransomware, another rents it out, a broker sells the initial foothold and a laundering service moves the money. This is why one stolen VPN password can lead to a full ransomware event weeks later.",
+     "text": "Modern cybercrime is specialised. One group writes ransomware, another rents it out, a broker sells the initial foothold and a laundering service moves the money. This is why one stolen VPN password can lead to a full ransomware event weeks later. Extortion is also changing shape: some crews now skip encryption and simply steal data to threaten publication, and others target virtualisation hosts so that one action stops hundreds of servers at once.",
      "title": "Crime is a supply chain"
     },
     {
@@ -439,6 +488,103 @@ TRACK.modules.push({
      "answer": "Initial access: the shared supplier VPN account. Expand: the network scans and credential discovery on the file share. Act: encryption of servers and domain-joined backups. The earliest effective control is unique supplier accounts with phishing-resistant MFA on the VPN, which would have made the brokered password useless. Missed detections include VPN logons from an unusual country and time, internal scanning from the VPN pool, access to the script share by a supplier account and use of the domain admin account from a non-admin host. Backups should have been isolated from the domain (offline or immutable)."
     },
     {
+     "type": "topology",
+     "title": "Attack path in the garment exporter case",
+     "nodes": [
+      {
+       "id": "crew",
+       "kind": "attacker",
+       "label": "Ransomware crew",
+       "sub": "bought access from a broker",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "vpn",
+       "kind": "firewall",
+       "label": "VPN gateway",
+       "sub": "shared supplier account",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "share",
+       "kind": "storage",
+       "label": "Script share",
+       "sub": "admin password in a script",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "dc",
+       "kind": "server",
+       "label": "Domain controller",
+       "sub": "domain admin reused",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "fs",
+       "kind": "server",
+       "label": "File servers",
+       "sub": "encrypted on day 21",
+       "x": 4,
+       "y": 4
+      },
+      {
+       "id": "bk",
+       "kind": "storage",
+       "label": "Backup appliance",
+       "sub": "domain-joined, encrypted",
+       "x": 6,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "crew",
+       "b": "vpn",
+       "label": "valid login, week 0",
+       "style": "attack"
+      },
+      {
+       "a": "vpn",
+       "b": "share",
+       "label": "scan, day 2",
+       "style": "attack"
+      },
+      {
+       "a": "share",
+       "b": "dc",
+       "label": "stolen admin, day 5",
+       "style": "attack"
+      },
+      {
+       "a": "dc",
+       "b": "fs",
+       "label": "push encryptor",
+       "style": "attack"
+      },
+      {
+       "a": "dc",
+       "b": "bk",
+       "label": "encrypt backups",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Corporate domain (flat)",
+       "x": 3,
+       "y": 1,
+       "w": 4,
+       "h": 4,
+       "tone": "warn"
+      }
+     ],
+     "caption": "Every red hop is a detection opportunity: an unusual VPN logon, internal scanning from the VPN pool, a supplier account reading the script share and domain admin use from a non-admin host. Backups inside the same domain fell with it."
+    },
+    {
      "type": "scenario",
      "title": "Choosing the next investment",
      "situation": "A hospital group has good antivirus but no MFA on webmail, flat networks and backups on the main domain. It can fund one project this quarter. Which gives the biggest risk reduction against ransomware crews?",
@@ -473,7 +619,7 @@ TRACK.modules.push({
       "Place both preventive and detective controls at every stage.",
       "Assume breach: make lateral movement and exfiltration visible."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -521,7 +667,7 @@ TRACK.modules.push({
         "Hacktivists",
         "Opportunistic scanners",
         "Initial access brokers",
-        "Regulators"
+        "Penetration testers"
        ],
        "answer": 2,
        "explain": "Brokers specialise in gaining and selling access; affiliates buy it to deploy ransomware."
@@ -587,7 +733,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "Public knowledge bases of adversary behaviour organise what real attackers do into a **matrix**: columns are the attacker's goals (tactics) and the cells are the methods (techniques). The best-known of these, maintained by a non-profit research organisation, is used across the industry as a common language. In this course we describe the idea in our own words and use a simplified, generic version."
+     "text": "Public knowledge bases of adversary behaviour organise what real attackers do into a **matrix**: columns are the attacker's goals (tactics) and the cells are the methods (techniques). The best known, **MITRE ATT&CK**, is maintained by a non-profit research organisation and used across the industry as a common language for intelligence, detection and testing. It is revised about twice a year, so always check technique names and IDs against the current release. In this course we describe the idea in our own words and use a simplified version."
     },
     {
      "type": "table",
@@ -621,8 +767,71 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "tree",
+     "title": "From tactic to procedure: one branch of the matrix",
+     "root": {
+      "label": "Tactic: credential access",
+      "text": "Why: steal secrets to act as someone else",
+      "children": [
+       {
+        "label": "OS credential dumping",
+        "text": "Technique (T1003)",
+        "children": [
+         {
+          "label": "LSASS memory",
+          "text": "Sub-technique (T1003.001)",
+          "children": [
+           {
+            "label": "Group X procedure",
+            "text": "Renamed utility dumps memory to a temp folder at 02:00"
+           }
+          ]
+         },
+         {
+          "label": "Directory replication",
+          "text": "Sub-technique (T1003.006)",
+          "children": [
+           {
+            "label": "Group Y procedure",
+            "text": "Replication request sent from a finance workstation"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "label": "Brute force",
+        "text": "Technique (T1110)",
+        "children": [
+         {
+          "label": "Password spraying",
+          "text": "Sub-technique (T1110.003)",
+          "children": [
+           {
+            "label": "Crew Z procedure",
+            "text": "One seasonal password tried against 4,000 accounts"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "label": "Steal web session cookie",
+        "text": "Technique (T1539)",
+        "children": [
+         {
+          "label": "Proxy-phishing procedure",
+          "text": "Session cookie captured and replayed from abroad"
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "Read down the tree: the tactic is the why, the technique the how, the sub-technique the variant and the procedure exactly what one actor did. A detection written at technique level catches many procedures at once."
+    },
+    {
      "type": "framework",
-     "title": "A simplified tactic sequence",
+     "title": "A simplified tactic sequence (the full enterprise matrix splits some of these further)",
      "items": [
       {
        "label": "T1",
@@ -849,6 +1058,16 @@ TRACK.modules.push({
        "term": "Threat-informed defence",
        "def": "Prioritising controls and detections based on the behaviours of adversaries likely to target you."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Tactics are the attacker's goals, techniques the methods, procedures one actor's exact steps.",
+      "Map incidents and intelligence to techniques so teams share one language for detection and testing.",
+      "Behaviour-based detections outlast hashes, IPs and domains because they are costly for attackers to change.",
+      "A technique is covered only when a tested rule fires, reaches an analyst and has a response path."
      ]
     },
     {
@@ -1087,6 +1306,114 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Zero trust access decision for the payment system",
+     "nodes": [
+      {
+       "id": "idp",
+       "kind": "idp",
+       "label": "Identity provider",
+       "sub": "MFA result, user risk",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "pdp",
+       "kind": "controller",
+       "label": "Policy engine",
+       "sub": "PDP: decides",
+       "x": 3,
+       "y": 1
+      },
+      {
+       "id": "dev",
+       "kind": "monitor",
+       "label": "Device health",
+       "sub": "EDR and patch status",
+       "x": 5,
+       "y": 1
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "sub": "every decision logged",
+       "x": 0,
+       "y": 3
+      },
+      {
+       "id": "pep",
+       "kind": "gateway",
+       "label": "Access proxy",
+       "sub": "PEP: enforces",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "app",
+       "kind": "server",
+       "label": "Payment system",
+       "sub": "high sensitivity",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "id": "user",
+       "kind": "user",
+       "label": "Finance officer",
+       "sub": "23:40, new country",
+       "x": 3,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "user",
+       "b": "pep",
+       "label": "request"
+      },
+      {
+       "a": "pep",
+       "b": "pdp",
+       "label": "ask",
+       "style": "dashed"
+      },
+      {
+       "a": "pdp",
+       "b": "idp",
+       "label": "identity signals"
+      },
+      {
+       "a": "pdp",
+       "b": "dev",
+       "label": "device signals"
+      },
+      {
+       "a": "pep",
+       "b": "app",
+       "label": "allow, limit or deny",
+       "style": "bold"
+      },
+      {
+       "a": "pep",
+       "b": "siem",
+       "label": "decision log",
+       "style": "dashed"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Protected resource",
+       "x": 6,
+       "y": 3,
+       "w": 1,
+       "h": 1,
+       "tone": "accent"
+      }
+     ],
+     "caption": "The proxy enforces but never decides alone: the policy engine combines identity, device and context for each request. In the lesson's scenario identity passes, but device and context fail, so access is limited."
+    },
+    {
      "type": "table",
      "title": "Common frameworks and what they are for",
      "head": [
@@ -1096,26 +1423,54 @@ TRACK.modules.push({
      ],
      "rows": [
       [
-       "Cybersecurity outcome framework (for example a national standards body's framework with govern, identify, protect, detect, respond, recover)",
-       "Describe programme maturity and set targets",
-       "Good for board reporting"
+       "Cybersecurity outcome framework (for example NIST CSF 2.0, released in 2024: Govern, Identify, Protect, Detect, Respond, Recover)",
+       "Describe programme maturity, set target profiles and report progress",
+       "Govern adds risk strategy, roles, policy and supply-chain oversight; good for board reporting"
       ],
       [
-       "Information security management system standard",
+       "Information security management system standard (ISO/IEC 27001:2022)",
        "Run a certifiable management system with risk assessment and a statement of applicability",
-       "Widely used for certification by auditors"
+       "Certificates to the older 2013 edition lapsed when the transition ended in October 2025"
       ],
       [
        "Prioritised control sets",
        "Pick a practical first set of technical safeguards",
-       "Useful for small teams"
+       "Useful for small teams; grouped into implementation tiers"
       ],
       [
-       "Sector regulations (for example central bank ICT guidelines)",
-       "Meet legal and regulatory duties",
+       "Sector and national regulations (for example central bank ICT guidelines, or NIS2 and DORA for firms operating in the EU)",
+       "Meet legal and regulatory duties, including incident reporting deadlines",
        "Mandatory for regulated firms"
       ]
      ]
+    },
+    {
+     "type": "cycle",
+     "title": "NIST CSF 2.0: Govern at the centre",
+     "center": "Govern",
+     "items": [
+      {
+       "label": "Identify",
+       "text": "Understand assets, suppliers, risks and improvement needs."
+      },
+      {
+       "label": "Protect",
+       "text": "Safeguards for identity, data, platforms and people."
+      },
+      {
+       "label": "Detect",
+       "text": "Find and analyse anomalies and attacks."
+      },
+      {
+       "label": "Respond",
+       "text": "Manage, analyse, contain, report and communicate incidents."
+      },
+      {
+       "label": "Recover",
+       "text": "Restore assets and operations, and communicate recovery."
+      }
+     ],
+     "caption": "Govern sits in the middle because risk strategy, roles, policy and supply-chain oversight steer the other five functions, which run continuously rather than once."
     },
     {
      "type": "callout",
@@ -1200,6 +1555,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Classify controls by function (preventive, detective, corrective, deterrent, compensating) and by type (administrative, technical, physical).",
+      "Layer independent controls so that no single failure exposes a crown-jewel asset.",
+      "Zero trust evaluates identity, device health and context for every request and grants the least privilege for the shortest time.",
+      "Map controls to one primary framework, such as CSF 2.0 with its Govern function, and cross-reference the rest."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -1256,6 +1621,17 @@ TRACK.modules.push({
        ],
        "answer": 1,
        "explain": "Corrective controls restore normal operations after an event."
+      },
+      {
+       "q": "A board asks which part of NIST CSF 2.0 covers setting cybersecurity risk strategy, assigning roles and overseeing supplier risk. Which function should you point to?",
+       "options": [
+        "Identify",
+        "Protect",
+        "Govern",
+        "Respond"
+       ],
+       "answer": 2,
+       "explain": "Govern, added in version 2.0, covers strategy, roles, policy, oversight and supply-chain risk management; the other functions carry it out."
       }
      ]
     }
@@ -1301,13 +1677,13 @@ TRACK.modules.push({
       [
        "Asymmetric encryption / key exchange",
        "Share secrets without a prior shared key",
-       "ECDHE (X25519), RSA ≥ 3072 bits, hybrid post-quantum key exchange",
-       "RSA 1024, static key exchange"
+       "ECDHE (X25519), hybrid X25519 + ML-KEM-768, RSA ≥ 3072 bits",
+       "RSA 1024, static RSA key transport"
       ],
       [
        "Digital signature",
        "Authenticity and integrity, non-repudiation",
-       "Ed25519, ECDSA P-256, RSA-PSS",
+       "Ed25519, ECDSA P-256, RSA-PSS; ML-DSA as support matures",
        "Unsigned updates, SHA-1 signatures"
       ]
      ]
@@ -1345,30 +1721,74 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
-     "title": "How a TLS 1.3 connection builds trust",
-     "items": [
+     "type": "sequence",
+     "title": "A TLS 1.3 handshake",
+     "actors": [
+      "Client",
+      "Server"
+     ],
+     "steps": [
       {
-       "label": "Client hello",
-       "text": "Supported cipher suites and a key share."
+       "from": 0,
+       "to": 1,
+       "label": "ClientHello + key share",
+       "note": "suites, SNI, maybe a hybrid PQ share"
       },
       {
-       "label": "Server hello",
-       "text": "Chosen suite and the server's key share; ephemeral keys give forward secrecy."
+       "from": 1,
+       "to": 0,
+       "label": "ServerHello + key share",
+       "note": "handshake keys derived here",
+       "reply": true
       },
       {
-       "label": "Certificate",
-       "text": "Server proves its identity with a certificate chain to a trusted root."
+       "from": 1,
+       "to": 0,
+       "label": "{EncryptedExtensions}",
+       "reply": true
       },
       {
-       "label": "Verify",
-       "text": "Client checks name, validity dates, chain and revocation."
+       "from": 1,
+       "to": 0,
+       "label": "{Certificate} chain",
+       "reply": true
       },
       {
-       "label": "Encrypted data",
-       "text": "Symmetric keys derived from the exchange protect the session."
+       "from": 1,
+       "to": 0,
+       "label": "{CertificateVerify}",
+       "note": "signature over the handshake",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "{Finished}",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 0,
+       "label": "Check name, dates, chain, revocation"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "{Finished}"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "[Application data]"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "[Application data]",
+       "reply": true
       }
-     ]
+     ],
+     "caption": "Only the two hellos travel in clear text. Everything in braces, including the certificate, is already encrypted with keys from the ephemeral exchange, which is what gives forward secrecy; square brackets mark traffic protected with the final session keys."
     },
     {
      "type": "cli",
@@ -1382,39 +1802,83 @@ TRACK.modules.push({
       "notBefore=Mar  1 00:00:00 2026 GMT",
       "notAfter=May 30 23:59:59 2026 GMT"
      ],
-     "note": "Short certificate lifetimes are now normal, so automate renewal and monitor expiry dates."
+     "note": "Public TLS certificate lifetimes are being cut in steps under the industry's baseline requirements (a 200-day maximum from March 2026, heading towards 47 days by 2029), so automate issuance and renewal (for example with ACME) and monitor expiry."
     },
     {
-     "type": "steps",
-     "title": "Key management life cycle",
+     "type": "cycle",
+     "title": "Key management lifecycle",
+     "center": "Each key",
      "items": [
       {
-       "title": "Generate",
-       "text": "Use a vetted library or a hardware security module with a good random source."
+       "label": "Generate",
+       "text": "Vetted library or HSM with a good random source."
       },
       {
-       "title": "Store",
-       "text": "Keep keys in an HSM or managed key vault, never in source code or tickets."
+       "label": "Store",
+       "text": "HSM or managed key vault, never source code or tickets."
       },
       {
-       "title": "Use",
-       "text": "Restrict which identities and services may use each key and log every use."
+       "label": "Use and log",
+       "text": "Only named identities and services may use the key; log every use."
       },
       {
-       "title": "Rotate",
-       "text": "Change keys on a schedule and after any suspected exposure."
+       "label": "Rotate",
+       "text": "On a schedule and after any suspected exposure."
       },
       {
-       "title": "Revoke and destroy",
-       "text": "Revoke certificates and securely destroy retired keys."
+       "label": "Revoke, destroy",
+       "text": "Revoke certificates and securely destroy retired keys, then start again."
       }
-     ]
+     ],
+     "caption": "Keys are never finished: every key is generated, protected, used, rotated and retired, and the inventory you build here is the same one a post-quantum migration needs."
     },
     {
      "type": "callout",
      "kind": "pro",
-     "text": "Large quantum computers could break today's RSA and elliptic-curve public-key systems. Data stolen now could be decrypted later ('harvest now, decrypt later'). Start a **crypto inventory**, prefer libraries that support the new standardised post-quantum algorithms and hybrid key exchange, and design for **crypto agility** so algorithms can be swapped without rewriting applications.",
+     "text": "Large quantum computers could break today's RSA and elliptic-curve public-key systems, and data stolen now could be decrypted later ('harvest now, decrypt later'). The first post-quantum standards were published in 2024: **ML-KEM** for key establishment and **ML-DSA** and **SLH-DSA** for signatures. Browsers and TLS libraries already offer hybrid key exchange that combines X25519 with ML-KEM. Start a **crypto inventory**, prioritise data that must stay secret for many years, and design for **crypto agility** so algorithms can be swapped without rewriting applications.",
      "title": "Get ready for post-quantum cryptography"
+    },
+    {
+     "type": "timeline",
+     "title": "The post-quantum migration path",
+     "items": [
+      {
+       "when": "2016",
+       "label": "Public competition opens",
+       "text": "NIST invites post-quantum algorithm proposals."
+      },
+      {
+       "when": "2022",
+       "label": "First algorithms chosen",
+       "text": "Lattice-based key establishment and signature schemes selected."
+      },
+      {
+       "when": "Aug 2024",
+       "label": "First standards",
+       "text": "FIPS 203 (ML-KEM), FIPS 204 (ML-DSA) and FIPS 205 (SLH-DSA) published."
+      },
+      {
+       "when": "2024–2025",
+       "label": "Hybrid TLS spreads",
+       "text": "Major browsers and content networks enable X25519 + ML-KEM by default."
+      },
+      {
+       "when": "2025",
+       "label": "Backup KEM selected",
+       "text": "HQC chosen as a second, differently built key-establishment algorithm."
+      },
+      {
+       "when": "~2030",
+       "label": "Deprecation (proposed)",
+       "text": "Draft guidance proposes deprecating today's 112-bit RSA and ECC."
+      },
+      {
+       "when": "~2035",
+       "label": "Disallowed (proposed)",
+       "text": "Quantum-vulnerable public-key algorithms proposed to be disallowed."
+      }
+     ],
+     "caption": "Migration is a programme of a decade, not a project: inventory and hybrid key exchange now, signatures and long-lived PKI next. Dates from 2030 are proposals, so check the current official timetable for your sector."
     },
     {
      "type": "scenario",
@@ -1485,6 +1949,17 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Choose the primitive by the goal: hashes for integrity, AEAD ciphers for confidentiality, key exchange for shared secrets, signatures for origin.",
+      "Store passwords with slow, salted password hashing such as Argon2id, never fast hashes or reversible encryption.",
+      "TLS 1.3 encrypts almost the whole handshake and gives forward secrecy; automate certificates as lifetimes shrink.",
+      "Most failures are in key handling: vault keys, log their use, rotate them and treat leaked keys as compromised.",
+      "Prepare for post-quantum now: inventory, hybrid key exchange and crypto agility."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -1540,7 +2015,7 @@ TRACK.modules.push({
         "To plan migration to post-quantum and replace weak algorithms"
        ],
        "answer": 3,
-       "explain": "You cannot migrate what you cannot find; an inventory drives crypto agility."
+       "explain": "You cannot migrate what you cannot find. An inventory shows where RSA and elliptic-curve keys protect long-lived data and drives crypto agility."
       }
      ]
     }
@@ -1630,6 +2105,160 @@ TRACK.modules.push({
        ]
       }
      ]
+    },
+    {
+     "type": "topology",
+     "title": "Zones joined through one enforcement point",
+     "nodes": [
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "dmz",
+       "kind": "lb",
+       "label": "Reverse proxy",
+       "sub": "WAF, 172.16.10.0/24",
+       "x": 1,
+       "y": 1
+      },
+      {
+       "id": "app",
+       "kind": "server",
+       "label": "App servers",
+       "sub": "10.20.1.0/24",
+       "x": 5,
+       "y": 1
+      },
+      {
+       "id": "db",
+       "kind": "db",
+       "label": "Databases",
+       "sub": "10.20.2.0/24",
+       "x": 6,
+       "y": 1
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "Core firewall",
+       "sub": "deny by default, logs all",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "dir",
+       "kind": "server",
+       "label": "Directory and PKI",
+       "sub": "Tier 0",
+       "x": 6,
+       "y": 4
+      },
+      {
+       "id": "users",
+       "kind": "laptop",
+       "label": "Staff VLANs",
+       "sub": "10.10.0.0/16",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "mgmt",
+       "kind": "host",
+       "label": "Jump hosts",
+       "sub": "10.10.50.0/28",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "bk",
+       "kind": "storage",
+       "label": "Backups",
+       "sub": "backup agent only",
+       "x": 5,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "inet",
+       "b": "fw",
+       "label": "HTTPS 443"
+      },
+      {
+       "a": "fw",
+       "b": "dmz"
+      },
+      {
+       "a": "fw",
+       "b": "app"
+      },
+      {
+       "a": "app",
+       "b": "db",
+       "label": "SQL only"
+      },
+      {
+       "a": "fw",
+       "b": "users"
+      },
+      {
+       "a": "fw",
+       "b": "mgmt"
+      },
+      {
+       "a": "fw",
+       "b": "dir"
+      },
+      {
+       "a": "fw",
+       "b": "bk"
+      }
+     ],
+     "zones": [
+      {
+       "label": "DMZ",
+       "x": 1,
+       "y": 1,
+       "w": 1,
+       "h": 1,
+       "tone": "warn"
+      },
+      {
+       "label": "Server zone",
+       "x": 5,
+       "y": 1,
+       "w": 2,
+       "h": 1
+      },
+      {
+       "label": "Restricted zone",
+       "x": 5,
+       "y": 4,
+       "w": 2,
+       "h": 1,
+       "tone": "accent"
+      },
+      {
+       "label": "User zone",
+       "x": 1,
+       "y": 4,
+       "w": 1,
+       "h": 1
+      },
+      {
+       "label": "Management",
+       "x": 3,
+       "y": 4,
+       "w": 1,
+       "h": 1,
+       "tone": "good"
+      }
+     ],
+     "caption": "Every zone reaches the others only through the firewall, so each crossing is an allow-list rule that is enforced and logged. Backups and identity sit in a restricted zone that user laptops cannot reach directly."
     },
     {
      "type": "compare",
@@ -1737,6 +2366,159 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "IT and OT separated by an industrial DMZ",
+     "nodes": [
+      {
+       "id": "it",
+       "kind": "host",
+       "label": "Enterprise IT",
+       "sub": "email, ERP, analysts",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "vendor",
+       "kind": "user",
+       "label": "Vendor engineer",
+       "sub": "named account, MFA",
+       "x": 6,
+       "y": 0
+      },
+      {
+       "id": "fw1",
+       "kind": "firewall",
+       "label": "IT/OT firewall",
+       "x": 3,
+       "y": 1
+      },
+      {
+       "id": "hist",
+       "kind": "db",
+       "label": "Historian replica",
+       "sub": "read by analysts",
+       "x": 2,
+       "y": 2
+      },
+      {
+       "id": "broker",
+       "kind": "gateway",
+       "label": "Access broker",
+       "sub": "per-job, recorded",
+       "x": 4,
+       "y": 2
+      },
+      {
+       "id": "fw2",
+       "kind": "firewall",
+       "label": "OT firewall",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "scada",
+       "kind": "server",
+       "label": "SCADA server",
+       "x": 2,
+       "y": 4
+      },
+      {
+       "id": "ews",
+       "kind": "host",
+       "label": "Engineering WS",
+       "sub": "only remote target",
+       "x": 4,
+       "y": 4
+      },
+      {
+       "id": "plc",
+       "kind": "controller",
+       "label": "Controllers",
+       "sub": "PLCs and HMIs",
+       "x": 3,
+       "y": 5
+      },
+      {
+       "id": "sis",
+       "kind": "shield",
+       "label": "Safety system",
+       "sub": "physically separate",
+       "x": 5,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "it",
+       "b": "fw1"
+      },
+      {
+       "a": "vendor",
+       "b": "broker",
+       "label": "ZTNA session",
+       "style": "tunnel"
+      },
+      {
+       "a": "fw1",
+       "b": "hist"
+      },
+      {
+       "a": "fw1",
+       "b": "broker"
+      },
+      {
+       "a": "hist",
+       "b": "fw2"
+      },
+      {
+       "a": "broker",
+       "b": "fw2"
+      },
+      {
+       "a": "fw2",
+       "b": "scada"
+      },
+      {
+       "a": "fw2",
+       "b": "ews"
+      },
+      {
+       "a": "scada",
+       "b": "plc"
+      },
+      {
+       "a": "ews",
+       "b": "plc"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Industrial DMZ",
+       "x": 2,
+       "y": 2,
+       "w": 3,
+       "h": 1,
+       "tone": "warn"
+      },
+      {
+       "label": "Site operations",
+       "x": 2,
+       "y": 4,
+       "w": 3,
+       "h": 1
+      },
+      {
+       "label": "Control and safety",
+       "x": 3,
+       "y": 5,
+       "w": 3,
+       "h": 1,
+       "tone": "bad"
+      }
+     ],
+     "caption": "No connection runs straight from IT to OT: data is replicated into the industrial DMZ and remote sessions are brokered there, terminating only on the engineering workstation. The safety system has no network path at all."
+    },
+    {
      "type": "callout",
      "kind": "example",
      "text": "Engineers wanted remote access to turbine controllers from home. Instead of a direct VPN into the control network, the plant built an industrial DMZ with a remote-access broker: vendor sessions are approved per job, recorded, time-limited and can only reach specific engineering workstations, never the controllers directly.",
@@ -1836,6 +2618,16 @@ TRACK.modules.push({
        "term": "Industrial DMZ",
        "def": "A buffer zone between IT and OT networks where all traffic is brokered."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Segmentation turns one compromised laptop into a contained incident instead of a network-wide one.",
+      "Group systems by sensitivity and force every zone crossing through an enforced, logged allow-list.",
+      "Protect the management plane, backups and identity systems first.",
+      "Never connect IT directly to OT: broker data and remote access through an industrial DMZ."
      ]
     },
     {
@@ -2034,9 +2826,76 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "sequence",
+     "title": "A vendor session through ZTNA",
+     "actors": [
+      "Vendor engineer",
+      "ZTNA broker",
+      "Identity provider",
+      "App connector",
+      "Maintenance PC"
+     ],
+     "steps": [
+      {
+       "from": 3,
+       "to": 1,
+       "label": "Outbound tunnel, no inbound ports",
+       "note": "set up before any user arrives"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Request maintenance app"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Redirect to sign-in",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 2,
+       "label": "Named account + strong MFA"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "Signed identity token",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Token + device posture"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Policy: who, device, ticket, time"
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Stitch session to one app"
+      },
+      {
+       "from": 3,
+       "to": 4,
+       "label": "Remote session to this PC only"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Record; end session after 2 hours"
+      }
+     ],
+     "caption": "The factory network never accepts an inbound connection: the connector dials out, and the broker joins a verified user to one application for a limited time. Compare this with a VPN, which places the vendor's laptop on the network."
+    },
+    {
      "type": "callout",
      "kind": "warning",
-     "text": "VPN gateways, firewalls and remote-access appliances have been among the most exploited systems in recent years because they face the internet and often run privileged code. Patch them as emergencies when a critical flaw is announced, restrict their management interfaces and send their logs to your SIEM.",
+     "text": "VPN gateways, firewalls and remote-access appliances have been among the most exploited systems in recent years because they face the internet and often run privileged code. Track them against known-exploited vulnerability catalogues, patch them as emergencies when a critical flaw is announced, restrict their management interfaces, send their logs to your SIEM and plan to replace models that have reached end of support.",
      "title": "Edge devices are prime targets"
     },
     {
@@ -2127,6 +2986,16 @@ TRACK.modules.push({
        "term": "Default deny",
        "def": "A policy that blocks all traffic unless a rule explicitly allows it."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Default deny with logging; every rule needs an owner, a reason and a review date.",
+      "Allow admin protocols only from jump hosts, and remove shadowed, unused and any-any rules.",
+      "ZTNA connects a verified user and device to one application; a VPN connects a device to a network.",
+      "Internet-facing edge devices are prime targets: patch them as emergencies and monitor them closely."
      ]
     },
     {
@@ -2279,6 +3148,127 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Where network evidence comes from",
+     "nodes": [
+      {
+       "id": "inet",
+       "kind": "internet",
+       "label": "Internet",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "cloud",
+       "kind": "cloud",
+       "label": "Cloud VPCs",
+       "sub": "flow logs",
+       "x": 6,
+       "y": 0
+      },
+      {
+       "id": "es",
+       "kind": "sensor",
+       "label": "Edge sensor",
+       "sub": "flows, DNS, TLS, HTTP logs",
+       "x": 5,
+       "y": 1
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "Edge firewall",
+       "sub": "allow and deny logs",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "siem",
+       "kind": "siem",
+       "label": "SIEM",
+       "x": 6,
+       "y": 3
+      },
+      {
+       "id": "srv",
+       "kind": "server",
+       "label": "Servers",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "core",
+       "kind": "l3switch",
+       "label": "Core switch",
+       "sub": "flow export",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "is",
+       "kind": "sensor",
+       "label": "Internal sensor",
+       "sub": "east-west NDR",
+       "x": 5,
+       "y": 5
+      },
+      {
+       "id": "users",
+       "kind": "laptop",
+       "label": "Users",
+       "x": 3,
+       "y": 6
+      }
+     ],
+     "links": [
+      {
+       "a": "inet",
+       "b": "fw",
+       "label": "1 Gbps"
+      },
+      {
+       "a": "es",
+       "b": "fw",
+       "label": "tap",
+       "style": "dashed"
+      },
+      {
+       "a": "fw",
+       "b": "core"
+      },
+      {
+       "a": "core",
+       "b": "srv"
+      },
+      {
+       "a": "core",
+       "b": "users"
+      },
+      {
+       "a": "core",
+       "b": "is",
+       "label": "span",
+       "style": "dashed"
+      },
+      {
+       "a": "es",
+       "b": "siem",
+       "style": "dashed"
+      },
+      {
+       "a": "is",
+       "b": "siem",
+       "style": "dashed"
+      },
+      {
+       "a": "cloud",
+       "b": "siem",
+       "style": "dashed"
+      }
+     ],
+     "caption": "Metadata from the edge sensor covers command and control and exfiltration; the internal sensor and switch flows cover lateral movement; cloud flow logs fill the gap for workloads that never cross the office network."
+    },
+    {
      "type": "cli",
      "title": "Capturing and filtering with tcpdump",
      "device": "Linux host",
@@ -2293,6 +3283,82 @@ TRACK.modules.push({
       "tcpdump -nn -r incident.pcap -q | awk '{print $3}' | cut -d. -f1-4 | sort | uniq -c | sort -rn | head"
      ],
      "note": "Capture only where you are authorised. Packet captures can contain passwords and personal data, so store them as evidence with restricted access."
+    },
+    {
+     "type": "packet",
+     "title": "The TCP header behind the tcpdump flag filter",
+     "width": 32,
+     "fields": [
+      {
+       "label": "Source port",
+       "bits": 16
+      },
+      {
+       "label": "Destination port",
+       "bits": 16
+      },
+      {
+       "label": "Sequence number",
+       "bits": 32
+      },
+      {
+       "label": "Acknowledgment number",
+       "bits": 32
+      },
+      {
+       "label": "Data offset",
+       "bits": 4
+      },
+      {
+       "label": "Reserved",
+       "bits": 4
+      },
+      {
+       "label": "CWR",
+       "bits": 1
+      },
+      {
+       "label": "ECE",
+       "bits": 1
+      },
+      {
+       "label": "URG",
+       "bits": 1
+      },
+      {
+       "label": "ACK",
+       "bits": 1
+      },
+      {
+       "label": "PSH",
+       "bits": 1
+      },
+      {
+       "label": "RST",
+       "bits": 1
+      },
+      {
+       "label": "SYN",
+       "bits": 1
+      },
+      {
+       "label": "FIN",
+       "bits": 1
+      },
+      {
+       "label": "Window",
+       "bits": 16
+      },
+      {
+       "label": "Checksum",
+       "bits": 16
+      },
+      {
+       "label": "Urgent pointer",
+       "bits": 16
+      }
+     ],
+     "caption": "The eight flag bits fill byte 13 of the header, which is what tcp[tcpflags] (or tcp[13]) reads. A SYN scan sends packets with SYN set and ACK clear, exactly what the second capture command isolates; options, if any, follow these 20 bytes."
     },
     {
      "type": "table",
@@ -2356,6 +3422,37 @@ TRACK.modules.push({
      "kind": "insight",
      "text": "Even with TLS everywhere, you can see server names, certificate details, connection timing, sizes and TLS client fingerprints. These metadata are enough to spot many command-and-control channels without decrypting content.",
      "title": "Encrypted traffic still talks"
+    },
+    {
+     "type": "chart",
+     "kind": "bar",
+     "title": "Outbound volume from the lab server, one week",
+     "labels": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+     ],
+     "series": [
+      {
+       "name": "GB sent to the internet",
+       "values": [
+        0.8,
+        0.6,
+        0.9,
+        12.5,
+        13.1,
+        12.4,
+        0.7
+       ]
+      }
+     ],
+     "unit": " GB",
+     "yLabel": "GB per day",
+     "caption": "Illustrative flow totals matching the case below: a server that normally sends under 1 GB a day uploads about 38 GB over three nights. A per-host baseline turns this jump into an alert."
     },
     {
      "type": "case",
@@ -2430,6 +3527,16 @@ TRACK.modules.push({
        "term": "DNS tunnelling",
        "def": "Hiding data or commands inside DNS queries and responses."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Keep flow records everywhere, protocol logs at key boundaries and full packet capture only where it pays.",
+      "IDS watches a copy, IPS sits inline and can block, NDR finds behavioural anomalies even in encrypted traffic.",
+      "Scanning, beaconing, unusual admin protocols, large night-time uploads and DNS tunnelling each leave network fingerprints.",
+      "Baselines per host and per destination turn raw volume into evidence."
      ]
     },
     {
@@ -2598,6 +3705,88 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "topology",
+     "title": "Results-day DDoS defence",
+     "nodes": [
+      {
+       "id": "bots",
+       "kind": "attacker",
+       "label": "Botnet",
+       "sub": "floods from many IPs",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "users",
+       "kind": "user",
+       "label": "Students",
+       "sub": "genuine peak demand",
+       "x": 5,
+       "y": 0
+      },
+      {
+       "id": "cdn",
+       "kind": "cloud",
+       "label": "CDN and scrubbing",
+       "sub": "absorbs, caches, filters",
+       "x": 3,
+       "y": 1
+      },
+      {
+       "id": "fw",
+       "kind": "firewall",
+       "label": "Edge firewall",
+       "sub": "accepts CDN ranges only",
+       "x": 3,
+       "y": 3
+      },
+      {
+       "id": "lb",
+       "kind": "lb",
+       "label": "Load balancer",
+       "sub": "WAF and rate limits",
+       "x": 3,
+       "y": 4
+      },
+      {
+       "id": "web",
+       "kind": "server",
+       "label": "Results site",
+       "sub": "origin address hidden",
+       "x": 3,
+       "y": 5
+      }
+     ],
+     "links": [
+      {
+       "a": "bots",
+       "b": "cdn",
+       "label": "volumetric + HTTP flood",
+       "style": "attack"
+      },
+      {
+       "a": "users",
+       "b": "cdn",
+       "label": "HTTPS"
+      },
+      {
+       "a": "cdn",
+       "b": "fw",
+       "label": "clean traffic only",
+       "style": "bold"
+      },
+      {
+       "a": "fw",
+       "b": "lb"
+      },
+      {
+       "a": "lb",
+       "b": "web"
+      }
+     ],
+     "caption": "The flood is absorbed upstream, where capacity is far larger than the board's own link, and cached pages serve genuine students. The origin accepts traffic only from the provider, so attackers cannot simply bypass the CDN."
+    },
+    {
      "type": "compare",
      "title": "Wi-Fi security choices",
      "columns": [
@@ -2634,6 +3823,75 @@ TRACK.modules.push({
      "title": "Evil twins on campus"
     },
     {
+     "type": "sequence",
+     "title": "802.1X with EAP-TLS on staff Wi-Fi",
+     "actors": [
+      "Laptop (supplicant)",
+      "Access point",
+      "RADIUS server"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Associate to staff network"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "EAP-Request/Identity",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "EAP-Response/Identity"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "RADIUS Access-Request (EAP inside)"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "TLS: server certificate",
+       "note": "relayed through the access point",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 0,
+       "label": "Validate server cert and name",
+       "note": "an evil twin fails here"
+      },
+      {
+       "from": 0,
+       "to": 2,
+       "label": "TLS: client certificate, Finished"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Access-Accept: keys + VLAN",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "EAP-Success",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "4-way handshake: session keys",
+       "reply": true
+      }
+     ],
+     "caption": "The laptop proves itself with a certificate and, just as importantly, checks the server's certificate before sending anything. RADIUS then hands the access point the keying material and the VLAN for this device."
+    },
+    {
      "type": "scenario",
      "title": "Exam results day",
      "situation": "A national education board publishes exam results online once a year. Last year the site went down under a mix of genuine load and a DDoS attack. What is the best preparation?",
@@ -2668,7 +3926,7 @@ TRACK.modules.push({
       "DDoS defence is mostly upstream capacity plus application-layer controls.",
       "Use 802.1X with certificate validation for staff Wi-Fi and watch for rogue access points."
      ],
-     "title": "Key points"
+     "title": "Key takeaways"
     },
     {
      "type": "reflection",
@@ -2861,34 +4119,105 @@ TRACK.modules.push({
     {
      "type": "callout",
      "kind": "insight",
-     "text": "In many organisations non-human identities outnumber staff by ten to one or more. They rarely have MFA, often hold broad permissions and seldom have an owner. Inventory them, give each one an owner and prefer short-lived credentials over static keys.",
+     "text": "In many organisations non-human identities (service accounts, API keys, pipeline tokens, cloud roles and, increasingly, AI agents acting through tools) far outnumber staff. They rarely have MFA, often hold broad permissions and seldom have an owner. Inventory them, give each one an owner and prefer short-lived credentials over static keys.",
      "title": "Machines now outnumber people"
     },
     {
-     "type": "steps",
-     "title": "Joiner-mover-leaver (JML)",
+     "type": "cycle",
+     "title": "Joiner-mover-leaver (JML) lifecycle",
+     "center": "Each identity",
      "items": [
       {
-       "title": "Joiner",
-       "text": "HR record triggers account creation with a role-based starter package; no copying of another user's access."
+       "label": "Joiner",
+       "text": "HR record triggers a role-based starter package; never copy another user's access."
       },
       {
-       "title": "Mover",
+       "label": "Mover",
        "text": "A role change removes old access as well as adding new; this is where privilege creep happens."
       },
       {
-       "title": "Leaver",
-       "text": "Disable accounts at the end of the last working day, revoke sessions and tokens, recover devices."
+       "label": "Periodic review",
+       "text": "Managers and data owners re-certify sensitive access every quarter or half year."
       },
       {
-       "title": "Periodic review",
-       "text": "Managers and data owners re-certify access every quarter or half year."
+       "label": "Leaver",
+       "text": "Disable on the last working day, revoke sessions and tokens, recover devices."
       },
       {
-       "title": "Orphan sweep",
+       "label": "Orphan sweep",
        "text": "Find accounts with no matching HR record or owner and disable them."
       }
-     ]
+     ],
+     "caption": "Access is not granted once: it is re-decided at every change in a person's working life. The mover and leaver stages fail most often, so automate them from the HR record."
+    },
+    {
+     "type": "sequence",
+     "title": "Automating JML from the HR record",
+     "actors": [
+      "HR system",
+      "Identity governance",
+      "Identity provider",
+      "SaaS app"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Hire: ward nurse, starts 1 Jul"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Map role to starter package"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Create account, add groups"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "SCIM POST /Users"
+      },
+      {
+       "from": 3,
+       "to": 2,
+       "label": "201 Created",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Transfer: new department"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Remove old groups, add new"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "SCIM PATCH group membership"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Leaver: last working day"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Disable, revoke sessions"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "SCIM PATCH active=false"
+      }
+     ],
+     "caption": "HR is the source of truth and nobody types access by hand: every hire, move and exit flows through governance to the identity provider and on to each application with SCIM, so leavers lose access everywhere the same day."
     },
     {
      "type": "compare",
@@ -3037,6 +4366,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Identity is the control plane: most breaches involve a valid account that was phished, bought, guessed or forgotten.",
+      "Drive joiner, mover and leaver changes from the HR record and remove old access on every move.",
+      "Give every non-human identity an owner and prefer short-lived credentials.",
+      "Use roles for simplicity, attributes for context, and separation of duties for sensitive processes."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -3123,9 +4462,9 @@ TRACK.modules.push({
      ],
      "rows": [
       [
-       "FIDO2 security key or platform passkey",
+       "Passkey (synced or device-bound) or FIDO2 security key",
        "Phishing-resistant: bound to the real website's origin",
-       "Needs recovery planning for lost keys"
+       "Needs a planned recovery path for lost devices"
       ],
       [
        "Certificate / smart card",
@@ -3161,30 +4500,130 @@ TRACK.modules.push({
      "title": "Why passkeys resist phishing"
     },
     {
-     "type": "flow",
-     "title": "Adversary-in-the-middle phishing",
-     "items": [
+     "type": "sequence",
+     "title": "Signing in with a passkey",
+     "actors": [
+      "Authenticator",
+      "Browser",
+      "Website"
+     ],
+     "steps": [
       {
-       "label": "Lure",
-       "text": "Email or message with a link to a proxy site that looks like the real sign-in page."
+       "from": 1,
+       "to": 2,
+       "label": "Start sign-in"
       },
       {
-       "label": "Relay",
-       "text": "The proxy forwards the username, password and one-time code to the real site."
+       "from": 2,
+       "to": 1,
+       "label": "Challenge for bank.example",
+       "reply": true
       },
       {
-       "label": "Steal session",
-       "text": "The real site issues a session cookie, which the proxy captures."
+       "from": 1,
+       "to": 1,
+       "label": "Origin must match bank.example"
       },
       {
-       "label": "Replay",
-       "text": "The attacker imports the cookie and is logged in, with MFA already satisfied."
+       "from": 1,
+       "to": 0,
+       "label": "Sign challenge for this site"
       },
       {
-       "label": "Persist",
-       "text": "Registers a new MFA method or creates inbox rules to stay hidden."
+       "from": 0,
+       "to": 0,
+       "label": "User verification: PIN or face"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Signature, site-specific key",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Signed assertion + origin"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "Verify with stored public key"
       }
-     ]
+     ],
+     "caption": "The private key never leaves the authenticator and the browser itself reports which origin asked. On a look-alike domain no matching key exists and any signature would name the wrong origin, so there is nothing to steal or relay."
+    },
+    {
+     "type": "sequence",
+     "title": "Adversary-in-the-middle phishing",
+     "actors": [
+      "User",
+      "Phishing proxy",
+      "Real sign-in",
+      "Attacker"
+     ],
+     "steps": [
+      {
+       "from": 3,
+       "to": 0,
+       "label": "Lure: link to a look-alike domain"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Username + password"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Relays credentials"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "MFA challenge",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Shows the same MFA prompt",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Code typed or push approved"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Relays the code"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Session cookie issued",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Cookie handed over"
+      },
+      {
+       "from": 3,
+       "to": 2,
+       "label": "Replays cookie: MFA satisfied"
+      },
+      {
+       "from": 3,
+       "to": 2,
+       "label": "Registers own MFA method",
+       "note": "persistence"
+      }
+     ],
+     "caption": "The proxy sits between the user and the genuine site and relays everything, so codes and push approvals are passed straight through. A passkey breaks the chain at step 6: the authenticator will not sign for the proxy's domain."
     },
     {
      "type": "compare",
@@ -3220,20 +4659,21 @@ TRACK.modules.push({
      "type": "checklist",
      "title": "Modern password and MFA policy",
      "items": [
-      "Minimum length of 12–15 characters; passphrases encouraged",
+      "At least 15 characters when a password is the only factor; at least 8 (longer encouraged) when it is one of several factors",
+      "Allow long passphrases, all printable characters and pasting, so password managers work",
       "Check new passwords against breached and banned lists",
       "No forced periodic changes unless compromise is suspected",
       "No composition rules that push users to predictable patterns",
       "MFA required for all remote, cloud and privileged access",
-      "Phishing-resistant MFA for administrators and finance staff",
+      "Phishing-resistant MFA (passkeys or security keys) for administrators and finance staff",
       "Number matching and rate limits on push notifications",
-      "Secure, verified process for MFA reset at the help desk"
+      "Secure, verified process for MFA reset and account recovery"
      ]
     },
     {
      "type": "callout",
      "kind": "warning",
-     "text": "Attackers phone the help desk pretending to be a staff member who lost their phone, and ask for an MFA reset. Require identity verification that an attacker cannot easily research, such as a video call with ID, manager approval or a call back to the number in the HR system.",
+     "text": "Attackers phone the help desk pretending to be a staff member who lost their phone, and ask for an MFA reset. They research names and managers on social media and may use convincing scripts or even cloned voices. Require verification an attacker cannot easily fake, such as a video call with ID, manager approval or a call back to the number in the HR system.",
      "title": "The help desk is part of your MFA"
     },
     {
@@ -3298,6 +4738,16 @@ TRACK.modules.push({
        "term": "MFA fatigue",
        "def": "Flooding a user with push requests until they approve one."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Not all MFA is equal: codes and push approvals can be relayed in real time by phishing proxies.",
+      "Passkeys and security keys are phishing-resistant because the signature is bound to the real origin.",
+      "Modern password policy favours length, breached-password checks and no forced rotation.",
+      "Help-desk resets and account recovery are part of the authentication system and need strong verification."
      ]
     },
     {
@@ -3414,35 +4864,76 @@ TRACK.modules.push({
      ]
     },
     {
-     "type": "flow",
-     "title": "An OpenID Connect sign-in (authorisation code flow with PKCE)",
-     "items": [
+     "type": "sequence",
+     "title": "OpenID Connect sign-in: authorisation code flow with PKCE",
+     "actors": [
+      "Browser",
+      "App (client)",
+      "Identity provider"
+     ],
+     "steps": [
       {
-       "label": "Redirect",
-       "text": "App sends the user to the IdP with a code challenge."
+       "from": 0,
+       "to": 1,
+       "label": "Open the payroll app"
       },
       {
-       "label": "Authenticate",
-       "text": "IdP checks credentials, MFA, device and risk."
+       "from": 1,
+       "to": 0,
+       "label": "Redirect: code_challenge, state",
+       "reply": true
       },
       {
-       "label": "Code",
-       "text": "IdP returns a short-lived authorisation code to the app's registered redirect address."
+       "from": 0,
+       "to": 2,
+       "label": "Authorisation request"
       },
       {
-       "label": "Exchange",
-       "text": "App swaps the code plus the code verifier for tokens."
+       "from": 2,
+       "to": 0,
+       "label": "Sign in: MFA, device, risk",
+       "reply": true
       },
       {
-       "label": "Validate",
-       "text": "App checks the ID token signature, issuer, audience and expiry."
+       "from": 0,
+       "to": 2,
+       "label": "Credentials or passkey"
+      },
+      {
+       "from": 2,
+       "to": 0,
+       "label": "Redirect with code + state",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Code to registered redirect URI"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Code + code_verifier",
+       "note": "back channel, never via the browser"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "ID, access and refresh tokens",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Check sig, iss, aud, exp, nonce"
       }
-     ]
+     ],
+     "caption": "The code that passes through the browser is useless on its own: only the app holding the original code_verifier can swap it for tokens. The app must still validate the ID token before trusting who signed in."
     },
     {
      "type": "callout",
      "kind": "warning",
-     "text": "Whoever holds a valid access or refresh token can use it, with no password or MFA prompt. Keep access tokens short-lived, store refresh tokens securely, bind tokens to devices where your platform supports it, and revoke refresh tokens when a user is disabled or a device is lost.",
+     "text": "Whoever holds a valid access or refresh token can use it, with no password or MFA prompt. Keep access tokens short-lived, store refresh tokens securely and revoke them when a user is disabled or a device is lost. Follow the OAuth 2.0 security best current practice (RFC 9700, published in 2025): authorisation code with PKCE, no implicit flow, exact redirect URI matching, and sender-constrained tokens (for example DPoP or mutual TLS) where your platform supports them.",
      "title": "Tokens are bearer credentials"
     },
     {
@@ -3470,7 +4961,8 @@ TRACK.modules.push({
        "items": [
         "Malware or phishing proxies steal session or refresh tokens",
         "Replayed from attacker infrastructure",
-        "Detect unusual IP, device or impossible travel"
+        "Detect unusual IP, device or impossible travel",
+        "Device-code phishing tricks users into approving the attacker's session on the real sign-in page; block that flow where it is not needed"
        ]
       },
       {
@@ -3617,6 +5109,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "SSO concentrates control and risk: one place to enforce MFA and disable leavers, one place attackers want.",
+      "SAML and OpenID Connect sign users in; OAuth 2.0 delegates API access; SCIM provisions accounts.",
+      "Use the authorisation code flow with PKCE and validate signature, issuer, audience, expiry and nonce.",
+      "Tokens and consent grants survive password resets: revoke them explicitly and restrict user consent."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -3644,7 +5146,7 @@ TRACK.modules.push({
       {
        "q": "What must an application check in an ID token besides the signature?",
        "options": [
-        "The user's favourite colour",
+        "The user's display name",
         "The size of the token in bytes",
         "Issuer, audience and expiry",
         "The browser version only"
@@ -3730,6 +5232,122 @@ TRACK.modules.push({
      "title": "Credentials flow downhill, risk flows uphill"
     },
     {
+     "type": "topology",
+     "title": "Tiers, admin paths and the path to avoid",
+     "nodes": [
+      {
+       "id": "paw0",
+       "kind": "host",
+       "label": "Tier 0 PAW",
+       "sub": "Tier 0 admin account",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "dc",
+       "kind": "server",
+       "label": "DCs, IdP, PKI",
+       "sub": "identity control plane",
+       "x": 4,
+       "y": 0
+      },
+      {
+       "id": "paw1",
+       "kind": "host",
+       "label": "Tier 1 PAW",
+       "sub": "server admin account",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "pam",
+       "kind": "vault",
+       "label": "PAM broker",
+       "sub": "JIT, vault, recording",
+       "x": 3,
+       "y": 2
+      },
+      {
+       "id": "srv",
+       "kind": "server",
+       "label": "App servers",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "help",
+       "kind": "user",
+       "label": "Help desk",
+       "sub": "Tier 2 account",
+       "x": 1,
+       "y": 4
+      },
+      {
+       "id": "lap",
+       "kind": "laptop",
+       "label": "Staff laptops",
+       "sub": "easiest to compromise",
+       "x": 4,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "paw0",
+       "b": "dc",
+       "label": "admin only from PAW",
+       "style": "bold"
+      },
+      {
+       "a": "paw1",
+       "b": "pam",
+       "label": "check-out"
+      },
+      {
+       "a": "pam",
+       "b": "srv",
+       "label": "recorded session"
+      },
+      {
+       "a": "help",
+       "b": "lap",
+       "label": "remote support"
+      },
+      {
+       "a": "lap",
+       "b": "dc",
+       "label": "Tier 0 logon here = stolen keys",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Tier 0: identity control plane",
+       "x": 1,
+       "y": 0,
+       "w": 6,
+       "h": 1,
+       "tone": "bad"
+      },
+      {
+       "label": "Tier 1: servers and apps",
+       "x": 1,
+       "y": 2,
+       "w": 6,
+       "h": 1,
+       "tone": "warn"
+      },
+      {
+       "label": "Tier 2: user devices",
+       "x": 1,
+       "y": 4,
+       "w": 6,
+       "h": 1
+      }
+     ],
+     "caption": "Administration flows only downward from a dedicated workstation in the same tier. The red path is the one to prevent: a Tier 0 account signing in to a laptop leaves credentials where attackers can most easily take them."
+    },
+    {
      "type": "framework",
      "title": "PAM capabilities",
      "items": [
@@ -3759,6 +5377,67 @@ TRACK.modules.push({
        "text": "Alert on unusual privileged activity."
       }
      ]
+    },
+    {
+     "type": "sequence",
+     "title": "Just-in-time elevation with approval",
+     "actors": [
+      "Admin",
+      "PAM / JIT service",
+      "Approver",
+      "Directory"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Request Domain Admins, 2 h",
+       "note": "linked to change ticket"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Approve? reason, ticket"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Approved",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Add to group, TTL 2 h"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "Granted, session recorded",
+       "reply": true
+      },
+      {
+       "from": 0,
+       "to": 3,
+       "label": "Admin work from the PAW"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Time limit reached"
+      },
+      {
+       "from": 1,
+       "to": 3,
+       "label": "Remove from group"
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Rotate vaulted password, log"
+      }
+     ],
+     "caption": "Privilege exists only for the approved window and disappears automatically; the vault rotates any credential that was used, so nothing useful is left behind for an attacker."
     },
     {
      "type": "cli",
@@ -3901,6 +5580,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Reduce how many privileged accounts exist, how long privilege lasts and where it can be used.",
+      "Higher-tier accounts never sign in to lower-tier systems; administer from dedicated PAWs.",
+      "Prefer just-in-time elevation, vaulting and recorded sessions over standing admin rights.",
+      "Tame service accounts and keep tested, monitored break-glass accounts for emergencies."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -3975,7 +5664,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "Once inside, attackers rarely need exploits. They **use the identity system as designed**: request tickets, read directory data, reuse hashes and add themselves to groups. Detecting this means understanding which logs record identity activity and what abnormal looks like."
+     "text": "Once inside, attackers rarely need exploits. They **use the identity system as designed**: request tickets, read directory data, reuse hashes and tokens, register new MFA methods and add themselves to groups. **Identity threat detection and response (ITDR)** tools specialise in spotting this, but every one of them depends on the logs in this lesson, so understand what they record and what abnormal looks like."
     },
     {
      "type": "table",
@@ -4022,6 +5711,95 @@ TRACK.modules.push({
        "4728 / 4732 / 4756 member added events"
       ]
      ]
+    },
+    {
+     "type": "topology",
+     "title": "Attack path: phished PC to domain compromise",
+     "nodes": [
+      {
+       "id": "atk",
+       "kind": "attacker",
+       "label": "Attacker",
+       "sub": "phishing email",
+       "x": 1,
+       "y": 0
+      },
+      {
+       "id": "crack",
+       "kind": "process",
+       "label": "Offline cracking",
+       "sub": "attacker's own GPUs",
+       "x": 3,
+       "y": 0
+      },
+      {
+       "id": "ws",
+       "kind": "laptop",
+       "label": "Accounts PC",
+       "sub": "user on leave",
+       "x": 1,
+       "y": 2
+      },
+      {
+       "id": "dc",
+       "kind": "server",
+       "label": "Domain controller",
+       "sub": "logs 4769, 4662",
+       "x": 5,
+       "y": 2
+      },
+      {
+       "id": "sql",
+       "kind": "server",
+       "label": "SQL server",
+       "sub": "svc_sql is local admin",
+       "x": 3,
+       "y": 4
+      }
+     ],
+     "links": [
+      {
+       "a": "atk",
+       "b": "ws",
+       "label": "foothold",
+       "style": "attack"
+      },
+      {
+       "a": "ws",
+       "b": "crack",
+       "label": "tickets out",
+       "style": "attack"
+      },
+      {
+       "a": "ws",
+       "b": "dc",
+       "label": "140 RC4 ticket requests",
+       "style": "attack"
+      },
+      {
+       "a": "ws",
+       "b": "sql",
+       "label": "logon as svc_sql",
+       "style": "attack"
+      },
+      {
+       "a": "sql",
+       "b": "dc",
+       "label": "DCSync as admin",
+       "style": "attack"
+      }
+     ],
+     "zones": [
+      {
+       "label": "Corporate domain",
+       "x": 1,
+       "y": 2,
+       "w": 5,
+       "h": 3,
+       "tone": "warn"
+      }
+     ],
+     "caption": "No exploit is used: the attacker requests service tickets, cracks a weak service password offline, uses it where a domain admin was logged on and then asks a DC for password hashes. Each hop leaves an event an analyst can alert on."
     },
     {
      "type": "table",
@@ -4105,6 +5883,61 @@ TRACK.modules.push({
      "title": "Make attackers trip over honey"
     },
     {
+     "type": "tree",
+     "title": "Attack tree: becoming domain admin",
+     "root": {
+      "label": "Goal: domain admin",
+      "text": "Any branch succeeds",
+      "children": [
+       {
+        "label": "Steal admin credentials",
+        "children": [
+         {
+          "label": "Kerberoast a service account",
+          "text": "Cut: long random passwords, AES only"
+         },
+         {
+          "label": "Dump memory where an admin logged on",
+          "text": "Cut: tiering, PAWs"
+         }
+        ]
+       },
+       {
+        "label": "Abuse directory rights",
+        "children": [
+         {
+          "label": "Add self to an admin group",
+          "text": "Detect: 4728 / 4732 / 4756"
+         },
+         {
+          "label": "Replicate hashes (DCSync)",
+          "text": "Detect: 4662 from a non-DC"
+         }
+        ]
+       },
+       {
+        "label": "Forge tickets",
+        "children": [
+         {
+          "label": "Golden ticket from KRBTGT",
+          "text": "Cut: rotate KRBTGT twice"
+         }
+        ]
+       },
+       {
+        "label": "Phish an admin directly",
+        "children": [
+         {
+          "label": "Proxy-phish cloud admin",
+          "text": "Cut: phishing-resistant MFA"
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "Attack trees list every route to one goal. Hardening work is prioritised by how many branches it cuts, and detections are placed on the branches you cannot cut."
+    },
+    {
      "type": "steps",
      "title": "Identity hardening priorities",
      "items": [
@@ -4118,7 +5951,7 @@ TRACK.modules.push({
       },
       {
        "title": "Fix service accounts",
-       "text": "Long random passwords, managed accounts, AES only."
+       "text": "Long random passwords, managed accounts, AES only. Platform vendors are moving to disable RC4 for Kerberos by default, so find accounts and devices that still need it and check your platform's current timetable."
       },
       {
        "title": "Rotate KRBTGT",
@@ -4196,6 +6029,16 @@ TRACK.modules.push({
        "term": "Honey account",
        "def": "A decoy account whose use signals malicious activity."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Attackers abuse identity systems as designed: tickets, replication, group changes and stolen tokens.",
+      "Know the key events: 4624/4625, 4672, 4768/4769, 4662 and 4728/4732/4756, plus cloud sign-in logs.",
+      "Spraying, Kerberoasting and DCSync each have a recognisable log signature; honey accounts give near-certain alerts.",
+      "Harden in the order that cuts the most attack paths: Tier 0, legacy authentication, service accounts, KRBTGT."
      ]
     },
     {
@@ -4316,8 +6159,8 @@ TRACK.modules.push({
       ],
       [
        "Office and browser",
-       "Block macros from internet files; isolate risky downloads",
-       "Not applicable or browser policy for desktops"
+       "Keep the default block on macros in internet files; allow only signed macros from trusted locations",
+       "Browser policy for desktops; block unapproved extensions"
       ],
       [
        "Encryption",
@@ -4375,30 +6218,36 @@ TRACK.modules.push({
      "title": "Removing admin rights pays twice"
     },
     {
-     "type": "steps",
-     "title": "Rolling out a baseline",
+     "type": "cycle",
+     "title": "The secure baseline lifecycle",
+     "center": "Baseline",
      "items": [
       {
-       "title": "Choose a reference",
-       "text": "Start from a recognised benchmark profile for each OS version and tailor it."
+       "label": "Choose reference",
+       "text": "Start from a recognised benchmark profile per OS version and tailor it."
       },
       {
-       "title": "Pilot",
-       "text": "Apply to IT staff and a few volunteers in each department."
+       "label": "Pilot",
+       "text": "Apply to IT staff and volunteers in each department."
       },
       {
-       "title": "Fix breakage",
-       "text": "Record exceptions for genuine business needs with an owner and expiry."
+       "label": "Record exceptions",
+       "text": "Genuine business needs get an owner, a compensating control and an expiry."
       },
       {
-       "title": "Enforce",
-       "text": "Push through device management or configuration management tools."
+       "label": "Enforce",
+       "text": "Push through device or configuration management, never by hand."
       },
       {
-       "title": "Measure drift",
+       "label": "Measure drift",
        "text": "Report compliance weekly; investigate machines that fall out of baseline."
+      },
+      {
+       "label": "Refresh",
+       "text": "Update for new OS versions and benchmark releases; rebuild golden images."
       }
-     ]
+     ],
+     "caption": "A baseline is never finished: drift reports and expiring exceptions feed the next revision, and every new operating system version restarts the loop."
     },
     {
      "type": "callout",
@@ -4497,6 +6346,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Most endpoint compromises exploit defaults; a documented, enforced baseline removes them.",
+      "Removing daily local admin rights and blocking internet macros cut the most common attack paths.",
+      "Enforce baselines through management tools and measure drift continuously.",
+      "Exceptions need an owner, a compensating control and an expiry date."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -4589,7 +6448,7 @@ TRACK.modules.push({
       ],
       [
        "Infostealer",
-       "Steals browser passwords, cookies and crypto wallets",
+       "Steals saved passwords, session cookies and crypto wallets; stolen sessions are resold to other criminals",
        "Access to browser credential stores, upload to a new domain"
       ],
       [
@@ -4619,6 +6478,45 @@ TRACK.modules.push({
      "kind": "example",
      "text": "Attackers increasingly use built-in tools such as PowerShell, remote management utilities, scheduled tasks and signed system binaries. Nothing malicious is written to disk, so file scanning finds nothing. EDR catches these by their **behaviour**: an office application starting PowerShell with an encoded command is suspicious however clean the files are.",
      "title": "Living off the land"
+    },
+    {
+     "type": "tree",
+     "title": "A malicious process tree, as EDR shows it",
+     "root": {
+      "label": "outlook.exe",
+      "text": "user opens an attachment",
+      "children": [
+       {
+        "label": "excel.exe",
+        "text": "invoice_0612.xlsm",
+        "children": [
+         {
+          "label": "powershell.exe -enc …",
+          "text": "encoded download from a new domain",
+          "children": [
+           {
+            "label": "rundll32.exe",
+            "text": "loads payload.dll from AppData"
+           },
+           {
+            "label": "schtasks.exe /create",
+            "text": "persistence at every logon"
+           },
+           {
+            "label": "whoami /groups",
+            "text": "discovery"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "label": "msedge.exe",
+        "text": "normal: link opened in the browser"
+       }
+      ]
+     },
+     "caption": "Read parent to child: a mail client starting a spreadsheet is normal, but a spreadsheet starting encoded PowerShell that then runs rundll32 and creates a task is a classic loader chain, however clean each file looks."
     },
     {
      "type": "flow",
@@ -4754,6 +6652,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "EDR asks whether behaviour is bad, not just whether a file is bad; living-off-the-land attacks need that.",
+      "Triage in minutes: scope, process tree, network, persistence, then decide.",
+      "Isolate high-value hosts through EDR rather than rebooting, so memory evidence survives.",
+      "Analyse suspicious files statically first and detonate only in an isolated sandbox."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -4828,7 +6736,7 @@ TRACK.modules.push({
    "blocks": [
     {
      "type": "text",
-     "text": "Email is still the top delivery route for phishing, malware and fraud. Defence has four layers: **authenticate** senders, **filter** content and links, **empower** users to report, and **protect business processes** so a convincing email alone cannot move money."
+     "text": "Email is still the top delivery route for phishing, malware and fraud. Defence has four layers: **authenticate** senders, **filter** content and links, **empower** users to report, and **protect business processes** so a convincing email alone cannot move money. Authentication is no longer optional: since 2024 the largest mailbox providers require SPF, DKIM and DMARC from organisations that send in bulk, and unauthenticated mail is increasingly rejected."
     },
     {
      "type": "table",
@@ -4869,10 +6777,81 @@ TRACK.modules.push({
       "dig +short example.com TXT | grep spf",
       "\"v=spf1 include:_spf.mailhost.example ip4:198.51.100.25 -all\"",
       "dig +short _dmarc.example.com TXT",
-      "\"v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc-reports@example.com\"",
+      "\"v=DMARC1; p=quarantine; rua=mailto:dmarc-reports@example.com\"",
       "dig +short selector1._domainkey.example.com TXT"
      ],
      "note": "Move DMARC from p=none to quarantine and then reject only after reports show all legitimate senders pass."
+    },
+    {
+     "type": "sequence",
+     "title": "How a receiver checks SPF, DKIM and DMARC",
+     "actors": [
+      "Sending server",
+      "Receiving server",
+      "DNS"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "SMTP: envelope sender, From:, DKIM-Signature"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "SPF record of envelope domain?"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "v=spf1 … -all",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "SPF: is the sending IP listed?"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "DKIM key at selector._domainkey"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "Public key",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "DKIM: signature valid?"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "_dmarc record of From domain"
+      },
+      {
+       "from": 2,
+       "to": 1,
+       "label": "p=reject; rua=…",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 1,
+       "label": "Aligned pass? If not, apply policy"
+      },
+      {
+       "from": 1,
+       "to": 0,
+       "label": "250 accepted or 550 rejected",
+       "reply": true
+      }
+     ],
+     "caption": "DMARC passes only when SPF or DKIM passes for a domain that aligns with the visible From address, which is what stops exact-domain spoofing. Aggregate reports sent to the rua address show who is sending as you."
     },
     {
      "type": "steps",
@@ -4942,6 +6921,63 @@ TRACK.modules.push({
      "answer": "The email came from the supplier's genuine, compromised mailbox, so SPF, DKIM and DMARC all passed. The key control is a business process: any change to supplier bank details must be verified by a call to a known phone number from the vendor master file (not the email), with dual approval and a cooling-off period for large payments. In the first hour: contact the bank to attempt a recall or freeze, report to law enforcement and the bank's fraud team, alert the supplier so they secure their mailbox, preserve the emails and headers, and check whether any of the exporter's own mailboxes have suspicious rules or sign-ins."
     },
     {
+     "type": "sequence",
+     "title": "Vendor email compromise, step by step",
+     "actors": [
+      "Attacker",
+      "Supplier mailbox",
+      "Exporter AP team",
+      "Exporter's bank"
+     ],
+     "steps": [
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Phish supplier, take over mailbox"
+      },
+      {
+       "from": 0,
+       "to": 1,
+       "label": "Inbox rule hides replies"
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Reply in real thread: new bank details",
+       "note": "passes SPF, DKIM and DMARC"
+      },
+      {
+       "from": 2,
+       "to": 2,
+       "label": "No call-back to known number",
+       "note": "the missing control"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Pay USD 186,000 to new account"
+      },
+      {
+       "from": 3,
+       "to": 0,
+       "label": "Funds reach a mule account",
+       "reply": true
+      },
+      {
+       "from": 1,
+       "to": 2,
+       "label": "Real supplier: payment overdue?",
+       "note": "two days later"
+      },
+      {
+       "from": 2,
+       "to": 3,
+       "label": "Urgent recall request"
+      }
+     ],
+     "caption": "Every message the exporter received was genuine and authenticated; the fraud succeeded at step 4, where a process control was missing. Speed at step 8 decides whether any money comes back."
+    },
+    {
      "type": "scenario",
      "title": "The CEO's urgent request",
      "situation": "A finance officer receives a message apparently from the managing director's personal email: 'I am in a meeting, buy ten gift cards for a client urgently and send me the codes.' What is the best response?",
@@ -4979,6 +7015,7 @@ TRACK.modules.push({
       "Bank-detail changes verified by call-back to a known number",
       "Dual approval for payments above a threshold",
       "One-click 'report phish' button feeding the SOC",
+      "Treat QR codes in emails and attachments as links: scan them at the gateway and teach staff that QR lures move the click to an unmanaged phone",
       "Regular simulations followed by short, kind training"
      ]
     },
@@ -5017,6 +7054,16 @@ TRACK.modules.push({
        "term": "Out-of-band verification",
        "def": "Confirming a request through a separate, trusted communication channel."
       }
+     ]
+    },
+    {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "SPF, DKIM and DMARC at enforcement stop exact-domain spoofing, not compromised genuine mailboxes.",
+      "Roll DMARC from none to quarantine to reject only after every legitimate sender aligns.",
+      "Read headers bottom to top and compare From, Reply-To, Return-Path and Authentication-Results.",
+      "Stop payment fraud with process: call-back to a known number, dual approval and cooling-off periods."
      ]
     },
     {
@@ -5097,12 +7144,13 @@ TRACK.modules.push({
      "text": "**Vulnerability management** is a continuous process, not an annual scan. It finds weaknesses in assets, decides which matter, fixes them within agreed times and proves they are fixed. It depends completely on knowing what you own: you cannot scan, patch or protect an asset nobody knows exists."
     },
     {
-     "type": "flow",
+     "type": "cycle",
      "title": "The vulnerability management cycle",
+     "center": "Asset inventory",
      "items": [
       {
        "label": "Discover",
-       "text": "Build and maintain the asset inventory, including cloud and shadow IT."
+       "text": "Build and maintain the inventory, including cloud and shadow IT."
       },
       {
        "label": "Assess",
@@ -5110,7 +7158,7 @@ TRACK.modules.push({
       },
       {
        "label": "Prioritise",
-       "text": "Rank by exploitability, exposure and business impact."
+       "text": "Rank by exploitation, exposure and business impact."
       },
       {
        "label": "Remediate",
@@ -5118,13 +7166,14 @@ TRACK.modules.push({
       },
       {
        "label": "Verify",
-       "text": "Re-scan to prove the fix."
+       "text": "Re-scan or test to prove the fix."
       },
       {
        "label": "Report",
-       "text": "Track metrics and trends for owners and leadership."
+       "text": "Track SLA metrics and trends for owners and leadership."
       }
-     ]
+     ],
+     "caption": "The loop runs continuously around the asset inventory: anything missing from the centre is never scanned, prioritised or fixed, which is why discovery comes first."
     },
     {
      "type": "table",
@@ -5166,6 +7215,12 @@ TRACK.modules.push({
        "Covered in the Build module"
       ]
      ]
+    },
+    {
+     "type": "callout",
+     "kind": "insight",
+     "title": "Do not depend on a single vulnerability feed",
+     "text": "In 2024 and 2025 the main public vulnerability databases faced enrichment backlogs and funding uncertainty, leaving many new CVE records without severity or product data for weeks. Mature programmes combine vendor security advisories, national and regional databases, known-exploited catalogues and their scanners' own research, and record where each priority decision came from."
     },
     {
      "type": "cli",
@@ -5290,6 +7345,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Vulnerability management is a continuous cycle built on an accurate asset inventory.",
+      "Authenticated scans and agents find missing patches; unauthenticated scans see only what the network shows.",
+      "Track scan coverage and credential success, because false negatives hide real exposure.",
+      "Use passive discovery for fragile OT and medical devices, and several data sources for vulnerability intelligence."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -5378,17 +7443,17 @@ TRACK.modules.push({
       [
        "Severity score (CVSS base)",
        "How bad the flaw is in theory",
-       "Published with the vulnerability"
+       "Published with the vulnerability (version 4.0 since late 2023; many feeds still show 3.1)"
       ],
       [
        "Known exploited catalogue",
        "Attackers are using it now",
-       "Government and industry catalogues of exploited flaws"
+       "Government and industry catalogues, for example the US CISA KEV list"
       ],
       [
        "Exploit prediction score (EPSS)",
-       "Probability of exploitation in the next 30 days",
-       "Data-driven public model"
+       "Estimated probability of exploitation activity in the next 30 days",
+       "Public data-driven model, retrained periodically (version 4 arrived in 2025)"
       ],
       [
        "Exposure",
@@ -5408,13 +7473,53 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "matrix",
+     "title": "Exploitation versus exposure",
+     "x": "Exploitation likelihood (none → known exploited)",
+     "y": "Exposure and asset criticality (low → high)",
+     "quadrants": [
+      {
+       "title": "Schedule fast, watch daily",
+       "items": [
+        "Critical flaw on the internet edge, no exploit yet",
+        "Re-check KEV and EPSS daily",
+        "P2 SLA"
+       ]
+      },
+      {
+       "title": "Fix first",
+       "items": [
+        "Known exploited and internet-facing",
+        "VPN, file transfer, mail gateways",
+        "Patch or mitigate within 48–72 h"
+       ]
+      },
+      {
+       "title": "Routine cycle",
+       "items": [
+        "Internal, low-value, no exploit",
+        "Next maintenance window"
+       ]
+      },
+      {
+       "title": "Contain, then fix",
+       "items": [
+        "Exploited but reachable only internally",
+        "Segment and monitor",
+        "P2 SLA"
+       ]
+      }
+     ],
+     "caption": "Severity alone decides nothing: the same CVSS score lands in different boxes depending on whether attackers are using it and whether they can reach the asset."
+    },
+    {
      "type": "formula",
      "title": "A practical priority model",
      "items": [
       {
        "name": "CVSS base score",
        "expr": "0.0 to 10.0 from exploitability and impact metrics",
-       "meaning": "None 0, low 0.1–3.9, medium 4.0–6.9, high 7.0–8.9, critical 9.0–10.0."
+       "meaning": "None 0, low 0.1–3.9, medium 4.0–6.9, high 7.0–8.9, critical 9.0–10.0. In version 4.0 a base-only score is labelled CVSS-B; adding threat and environmental metrics gives CVSS-BTE."
       },
       {
        "name": "Risk-based priority",
@@ -5432,6 +7537,57 @@ TRACK.modules.push({
        "meaning": "The headline metric for leadership."
       }
      ]
+    },
+    {
+     "type": "tree",
+     "title": "A simplified SSVC-style decision tree",
+     "root": {
+      "label": "Exploitation?",
+      "text": "first decision point",
+      "children": [
+       {
+        "label": "Active",
+        "text": "listed as known exploited",
+        "children": [
+         {
+          "label": "Automatable or exposed",
+          "text": "Act: emergency fix now"
+         },
+         {
+          "label": "Otherwise",
+          "text": "Attend: fix within days"
+         }
+        ]
+       },
+       {
+        "label": "Public proof of concept",
+        "children": [
+         {
+          "label": "High mission impact",
+          "text": "Attend: fix within days"
+         },
+         {
+          "label": "Lower impact",
+          "text": "Track*: watch closely"
+         }
+        ]
+       },
+       {
+        "label": "None known",
+        "children": [
+         {
+          "label": "Total technical impact",
+          "text": "Track*: watch closely"
+         },
+         {
+          "label": "Partial impact",
+          "text": "Track: normal cycle"
+         }
+        ]
+       }
+      ]
+     },
+     "caption": "Stakeholder-specific vulnerability categorisation replaces a single score with a few decisions: exploitation, automatability, technical impact and mission impact. This is a teaching simplification; tune the branches to your own SLAs."
     },
     {
      "type": "table",
@@ -5607,6 +7763,16 @@ TRACK.modules.push({
      ]
     },
     {
+     "type": "keypoints",
+     "title": "Key takeaways",
+     "items": [
+      "Only a small share of vulnerabilities are ever exploited; prioritise by exploitation, exposure and asset criticality, not CVSS alone.",
+      "Known-exploited catalogues and EPSS add the real-world likelihood that severity scores lack.",
+      "Agree remediation SLAs per priority and report SLA compliance and MTTR.",
+      "Patch in rings with rollback, and use virtual patching as a recorded, expiring compensating control."
+     ]
+    },
+    {
      "type": "quiz",
      "items": [
       {
@@ -5615,7 +7781,7 @@ TRACK.modules.push({
         "A long technical description",
         "The vendor's market share",
         "Evidence of active exploitation on an exposed asset",
-        "The number of words in its title"
+        "A CVSS score of 7.0 on an internal test server"
        ],
        "answer": 2,
        "explain": "Exploitation plus exposure is the strongest predictor of real risk."
@@ -6021,7 +8187,7 @@ TRACK.exam.push([
  },
  {
   "module": "m4",
-  "q": "Which finding should be remediated first?",
+  "q": "A vulnerability team can fix only one finding before the weekend. Which should it remediate first?",
   "options": [
    "CVSS 9.9 on an isolated training lab machine that has no network connection of any kind",
    "CVSS 5.3 on an internal printer with a public proof of concept",
@@ -6029,7 +8195,7 @@ TRACK.exam.push([
    "CVSS 8.1 on an internet-facing file transfer server that is listed as actively exploited"
   ],
   "answer": 3,
-  "explain": "Active exploitation on an exposed system is the highest real risk. An isolated lab machine is not reachable despite its score."
+  "explain": "Active exploitation on an internet-facing system is the highest real risk. An isolated lab machine is unreachable despite its score, and the printer and decommissioning server are lower priority."
  },
  {
   "module": "m4",
